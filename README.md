@@ -65,7 +65,7 @@ Allows coordinators to manage logistical aspects of job fairs including booth as
 ### Setup Instructions
 1. **Clone the repository**
    ```
-   git clone https://github.com/yourusername/JobFairManagementSystem.git
+   git clone https://github.com/itsalihamza/JobFairManagementSystem.git
    ```
 
 2. **Open the solution**
@@ -190,4 +190,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 Project Maintainer: Your Name - email@example.com
 
-Project Link: [https://github.com/yourusername/JobFairManagementSystem](https://github.com/yourusername/JobFairManagementSystem) 
+Project Link: [https://github.com/itsalihamza/JobFairManagementSystem](https://github.com/itsalihamza/JobFairManagementSystem) 
