@@ -2,6 +2,8 @@
 
 A comprehensive platform for managing job fairs, connecting students, recruiters, and administrators.
 
+![CareerConnect Logo](logo_placeholder.png)
+
 ## Project Overview
 
 CareerConnect is designed to streamline the organization and management of job fairs at educational institutions. The system creates an efficient ecosystem for students, recruiters, coordinators, and administrators to interact seamlessly throughout the job fair lifecycle.
@@ -16,6 +18,17 @@ CareerConnect is designed to streamline the organization and management of job f
 - **Advanced reporting system** with analytics and insights
 - **Interview scheduling** and management
 - **Secure database architecture** for storing sensitive user information
+
+## User Interface
+
+### Landing Page
+![Landing Page](landingpage.png)
+
+### Login Screen
+![Login Screen](loginpage.png)
+
+### Registration Screen
+![Registration Screen](registerpage.png)
 
 ## System Architecture
 
