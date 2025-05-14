@@ -98,7 +98,7 @@ namespace JobFairManagementSystem
                     string seasonYear = (fairDate.Month >= 3 && fairDate.Month <= 5) ? "Spring" :
                                       (fairDate.Month >= 6 && fairDate.Month <= 8) ? "Summer" :
                                       (fairDate.Month >= 9 && fairDate.Month <= 11) ? "Fall" : "Winter";
-                    
+                
                     txtDescription.Text = $"The {seasonYear} {fairDate.Year} Career Fair at {fairVenue} is an excellent opportunity for " +
                     "students to connect with top companies in the IT industry. Companies will be recruiting for " +
                     "both internships and full-time positions. Don't miss this opportunity to network and find your dream job!";
@@ -136,7 +136,7 @@ namespace JobFairManagementSystem
                                         reader["OpenPositions"].ToString(),
                                         reader["NumPositions"].ToString()
                                     );
-                                }
+            }
                                 
                                 // If no companies found, try an alternative approach
                                 if (!hasCompanies)

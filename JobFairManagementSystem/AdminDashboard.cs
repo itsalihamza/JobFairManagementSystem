@@ -24,6 +24,12 @@ namespace JobFairManagementSystem
             // Set welcome label
             lblWelcome.Text = "Welcome, Admin";
             
+            // Initialize the reports combo box
+            cmbReportType.SelectedIndex = 0;
+            
+            // Add event handler for the Show Report button
+            btnShowReport.Click += btnShowReport_Click;
+            
             // Load real data from the database
             LoadData();
         }
@@ -812,6 +818,13 @@ namespace JobFairManagementSystem
                 case 2: // Students tab
                     LoadStudents();
                     break;
+                case 3: // Reports tab
+                    // Load initial report
+                    if (cmbReportType.SelectedIndex >= 0)
+                    {
+                        DisplayReport(cmbReportType.SelectedItem.ToString());
+                    }
+                    break;
             }
         }
 
@@ -881,6 +894,91 @@ namespace JobFairManagementSystem
                         {
                             int interviewCount = (int)command.ExecuteScalar();
                             reportContent.AppendLine($"Total Interviews: {interviewCount}");
+                        }
+                        
+                        reportContent.AppendLine();
+                        
+                        // Department-wise registration counts
+                        reportContent.AppendLine("DEPARTMENT-WISE REGISTRATION COUNTS");
+                        reportContent.AppendLine("----------------------------------");
+                        reportContent.AppendLine("Department,Student Count");
+                        
+                        string deptQuery = @"
+                            SELECT 
+                                DegreeProgram,
+                                COUNT(*) AS StudentCount
+                            FROM Students
+                            GROUP BY DegreeProgram
+                            ORDER BY StudentCount DESC";
+                        
+                        using (SqlCommand command = new SqlCommand(deptQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    reportContent.AppendLine(
+                                        $"{reader["DegreeProgram"]},{reader["StudentCount"]}");
+                                }
+                            }
+                        }
+                        
+                        reportContent.AppendLine();
+                        
+                        // GPA distribution across applicants
+                        reportContent.AppendLine("GPA DISTRIBUTION");
+                        reportContent.AppendLine("---------------");
+                        reportContent.AppendLine("GPA Range,Student Count");
+                        
+                        string gpaQuery = @"
+                            WITH GPARanges AS (
+                                SELECT 
+                                    CASE 
+                                        WHEN GPA >= 3.5 THEN '3.5 - 4.0'
+                                        WHEN GPA >= 3.0 THEN '3.0 - 3.49'
+                                        WHEN GPA >= 2.5 THEN '2.5 - 2.99'
+                                        WHEN GPA >= 2.0 THEN '2.0 - 2.49'
+                                        ELSE 'Below 2.0'
+                                    END AS GPARange,
+                                    CASE 
+                                        WHEN GPA >= 3.5 THEN 1
+                                        WHEN GPA >= 3.0 THEN 2
+                                        WHEN GPA >= 2.5 THEN 3
+                                        WHEN GPA >= 2.0 THEN 4
+                                        ELSE 5
+                                    END AS SortOrder,
+                                    COUNT(*) AS StudentCount
+                                FROM Students
+                                GROUP BY 
+                                    CASE 
+                                        WHEN GPA >= 3.5 THEN '3.5 - 4.0'
+                                        WHEN GPA >= 3.0 THEN '3.0 - 3.49'
+                                        WHEN GPA >= 2.5 THEN '2.5 - 2.99'
+                                        WHEN GPA >= 2.0 THEN '2.0 - 2.49'
+                                        ELSE 'Below 2.0'
+                                    END,
+                                    CASE 
+                                        WHEN GPA >= 3.5 THEN 1
+                                        WHEN GPA >= 3.0 THEN 2
+                                        WHEN GPA >= 2.5 THEN 3
+                                        WHEN GPA >= 2.0 THEN 4
+                                        ELSE 5
+                                    END
+                            )
+                            SELECT GPARange, StudentCount 
+                            FROM GPARanges
+                            ORDER BY SortOrder";
+                        
+                        using (SqlCommand command = new SqlCommand(gpaQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    reportContent.AppendLine(
+                                        $"{reader["GPARange"]},{reader["StudentCount"]}");
+                                }
+                            }
                         }
                         
                         reportContent.AppendLine();
@@ -968,6 +1066,220 @@ namespace JobFairManagementSystem
             public TimeSpan StartTime { get; set; }
             public TimeSpan EndTime { get; set; }
             public string Venue { get; set; }
+        }
+
+        private void btnShowReport_Click(object sender, EventArgs e)
+        {
+            string reportType = cmbReportType.SelectedItem.ToString();
+            DisplayReport(reportType);
+        }
+
+        private void DisplayReport(string reportType)
+        {
+            try
+            {
+                panel2.Controls.Clear();
+                
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // Create a ListView to display the report data
+                    ListView listView = new ListView();
+                    listView.View = View.Details;
+                    listView.FullRowSelect = true;
+                    listView.GridLines = true;
+                    listView.Size = new Size(800, 230);
+                    listView.Location = new Point(20, 10);
+                    
+                    Label lblSummary = new Label();
+                    lblSummary.AutoSize = true;
+                    lblSummary.Location = new Point(20, 200);
+                    lblSummary.ForeColor = Color.Navy;
+                    
+                    switch (reportType)
+                    {
+                        case "Department-wise Registration":
+                            listView.Columns.Add("Department", 200);
+                            listView.Columns.Add("Student Count", 100);
+                            listView.Columns.Add("Percentage", 100);
+                            
+                            string deptQuery = @"
+                                SELECT 
+                                    DegreeProgram,
+                                    COUNT(*) AS StudentCount
+                                FROM Students
+                                GROUP BY DegreeProgram
+                                ORDER BY StudentCount DESC";
+                            
+                            using (SqlCommand command = new SqlCommand(deptQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    int totalStudents = 0;
+                                    Dictionary<string, int> deptCounts = new Dictionary<string, int>();
+                                    
+                                    while (reader.Read())
+                                    {
+                                        string dept = reader["DegreeProgram"].ToString();
+                                        int count = Convert.ToInt32(reader["StudentCount"]);
+                                        deptCounts.Add(dept, count);
+                                        totalStudents += count;
+                                    }
+                                    
+                                    // Calculate percentages and populate ListView
+                                    foreach (var dept in deptCounts)
+                                    {
+                                        double percentage = (double)dept.Value / totalStudents * 100;
+                                        ListViewItem item = new ListViewItem(dept.Key);
+                                        item.SubItems.Add(dept.Value.ToString());
+                                        item.SubItems.Add($"{percentage:F1}%");
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    lblSummary.Text = $"Total students registered: {totalStudents}";
+                                }
+                            }
+                            break;
+                            
+                        case "GPA Distribution":
+                            listView.Columns.Add("GPA Range", 200);
+                            listView.Columns.Add("Student Count", 100);
+                            listView.Columns.Add("Percentage", 100);
+                            
+                            string gpaQuery = @"
+                                WITH GPARanges AS (
+                                    SELECT 
+                                        CASE 
+                                            WHEN GPA >= 3.5 THEN '3.5 - 4.0'
+                                            WHEN GPA >= 3.0 THEN '3.0 - 3.49'
+                                            WHEN GPA >= 2.5 THEN '2.5 - 2.99'
+                                            WHEN GPA >= 2.0 THEN '2.0 - 2.49'
+                                            ELSE 'Below 2.0'
+                                        END AS GPARange,
+                                        CASE 
+                                            WHEN GPA >= 3.5 THEN 1
+                                            WHEN GPA >= 3.0 THEN 2
+                                            WHEN GPA >= 2.5 THEN 3
+                                            WHEN GPA >= 2.0 THEN 4
+                                            ELSE 5
+                                        END AS SortOrder,
+                                        COUNT(*) AS StudentCount
+                                    FROM Students
+                                    GROUP BY 
+                                        CASE 
+                                            WHEN GPA >= 3.5 THEN '3.5 - 4.0'
+                                            WHEN GPA >= 3.0 THEN '3.0 - 3.49'
+                                            WHEN GPA >= 2.5 THEN '2.5 - 2.99'
+                                            WHEN GPA >= 2.0 THEN '2.0 - 2.49'
+                                            ELSE 'Below 2.0'
+                                        END,
+                                        CASE 
+                                            WHEN GPA >= 3.5 THEN 1
+                                            WHEN GPA >= 3.0 THEN 2
+                                            WHEN GPA >= 2.5 THEN 3
+                                            WHEN GPA >= 2.0 THEN 4
+                                            ELSE 5
+                                        END
+                                )
+                                SELECT GPARange, StudentCount 
+                                FROM GPARanges
+                                ORDER BY SortOrder";
+                            
+                            using (SqlCommand command = new SqlCommand(gpaQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    int totalStudents = 0;
+                                    Dictionary<string, int> gpaCounts = new Dictionary<string, int>();
+                                    
+                                    while (reader.Read())
+                                    {
+                                        string range = reader["GPARange"].ToString();
+                                        int count = Convert.ToInt32(reader["StudentCount"]);
+                                        gpaCounts.Add(range, count);
+                                        totalStudents += count;
+                                    }
+                                    
+                                    // Calculate percentages and populate ListView
+                                    foreach (var range in gpaCounts)
+                                    {
+                                        double percentage = (double)range.Value / totalStudents * 100;
+                                        ListViewItem item = new ListViewItem(range.Key);
+                                        item.SubItems.Add(range.Value.ToString());
+                                        item.SubItems.Add($"{percentage:F1}%");
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    double averageGPA = 0;
+                                    // Calculate approximate average GPA (weighted average of ranges)
+                                    if (gpaCounts.ContainsKey("3.5 - 4.0")) averageGPA += gpaCounts["3.5 - 4.0"] * 3.75;
+                                    if (gpaCounts.ContainsKey("3.0 - 3.49")) averageGPA += gpaCounts["3.0 - 3.49"] * 3.25;
+                                    if (gpaCounts.ContainsKey("2.5 - 2.99")) averageGPA += gpaCounts["2.5 - 2.99"] * 2.75;
+                                    if (gpaCounts.ContainsKey("2.0 - 2.49")) averageGPA += gpaCounts["2.0 - 2.49"] * 2.25;
+                                    if (gpaCounts.ContainsKey("Below 2.0")) averageGPA += gpaCounts["Below 2.0"] * 1.75;
+                                    
+                                    averageGPA /= totalStudents;
+                                    
+                                    lblSummary.Text = $"Average GPA: {averageGPA:F2}";
+                                }
+                            }
+                            break;
+                            
+                        case "Top Skills":
+                            listView.Columns.Add("Skill", 250);
+                            listView.Columns.Add("Student Count", 100);
+                            listView.Columns.Add("Popularity", 150);
+                            
+                            string skillsQuery = @"
+                                SELECT TOP 10
+                                    s.SkillName,
+                                    COUNT(ss.StudentID) AS StudentCount
+                                FROM Skills s
+                                JOIN StudentSkills ss ON s.SkillID = ss.SkillID
+                                GROUP BY s.SkillName
+                                ORDER BY StudentCount DESC";
+                            
+                            // Count total students
+                            string totalQuery = "SELECT COUNT(*) FROM Students";
+                            int totalStudentCount = 0;
+                            
+                            using (SqlCommand totCommand = new SqlCommand(totalQuery, connection))
+                            {
+                                totalStudentCount = (int)totCommand.ExecuteScalar();
+                            }
+                            
+                            using (SqlCommand command = new SqlCommand(skillsQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    while (reader.Read())
+                                    {
+                                        string skill = reader["SkillName"].ToString();
+                                        int count = Convert.ToInt32(reader["StudentCount"]);
+                                        double percentage = (double)count / totalStudentCount * 100;
+                                        
+                                        ListViewItem item = new ListViewItem(skill);
+                                        item.SubItems.Add(count.ToString());
+                                        item.SubItems.Add($"{percentage:F1}% of students");
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    lblSummary.Text = "Skills distribution among registered students";
+                                }
+                            }
+                            break;
+                    }
+                    
+                    panel2.Controls.Add(listView);
+                    panel2.Controls.Add(lblSummary);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error generating report: " + ex.Message,
+                    "Report Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 } 

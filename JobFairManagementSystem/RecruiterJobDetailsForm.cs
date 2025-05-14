@@ -61,7 +61,7 @@ namespace JobFairManagementSystem
                         using (SqlDataReader reader = command.ExecuteReader())
                         {
                             if (reader.Read())
-                            {
+            {
                                 lblJobTypeValue.Text = reader["JobType"].ToString();
                                 lblSalaryValue.Text = reader["SalaryRange"].ToString();
                                 lblStatusValue.Text = reader["Status"].ToString();
@@ -70,7 +70,7 @@ namespace JobFairManagementSystem
                                 int applicants = Convert.ToInt32(reader["ApplicantCount"]);
                                 lblApplicantsValue.Text = applicants.ToString();
                                 lblVacanciesValue.Text = (applicants + 5).ToString(); // Add buffer for vacancies
-                                
+                
                                 txtDescription.Text = reader["Description"].ToString();
                             }
                             else

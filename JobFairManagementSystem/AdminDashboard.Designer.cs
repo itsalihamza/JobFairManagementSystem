@@ -58,6 +58,10 @@ namespace JobFairManagementSystem
             this.StudentStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.tabReports = new System.Windows.Forms.TabPage();
             this.btnGenerateReports = new System.Windows.Forms.Button();
+            this.lblReportTitle = new System.Windows.Forms.Label();
+            this.cmbReportType = new System.Windows.Forms.ComboBox();
+            this.btnShowReport = new System.Windows.Forms.Button();
+            this.panel2 = new System.Windows.Forms.Panel();
             this.panel1 = new System.Windows.Forms.Panel();
             this.btnLogout = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
@@ -367,6 +371,10 @@ namespace JobFairManagementSystem
             // tabReports
             // 
             this.tabReports.Controls.Add(this.btnGenerateReports);
+            this.tabReports.Controls.Add(this.lblReportTitle);
+            this.tabReports.Controls.Add(this.cmbReportType);
+            this.tabReports.Controls.Add(this.btnShowReport);
+            this.tabReports.Controls.Add(this.panel2);
             this.tabReports.Location = new System.Drawing.Point(4, 29);
             this.tabReports.Name = "tabReports";
             this.tabReports.Size = new System.Drawing.Size(892, 417);
@@ -378,12 +386,53 @@ namespace JobFairManagementSystem
             // 
             this.btnGenerateReports.BackColor = System.Drawing.Color.RoyalBlue;
             this.btnGenerateReports.ForeColor = System.Drawing.Color.White;
-            this.btnGenerateReports.Location = new System.Drawing.Point(346, 188);
+            this.btnGenerateReports.Location = new System.Drawing.Point(710, 360);
             this.btnGenerateReports.Name = "btnGenerateReports";
-            this.btnGenerateReports.Size = new System.Drawing.Size(200, 50);
+            this.btnGenerateReports.Size = new System.Drawing.Size(160, 40);
             this.btnGenerateReports.TabIndex = 0;
-            this.btnGenerateReports.Text = "Generate Reports";
+            this.btnGenerateReports.Text = "Export to CSV";
             this.btnGenerateReports.UseVisualStyleBackColor = false;
+            // 
+            // lblReportTitle
+            // 
+            this.lblReportTitle.AutoSize = true;
+            this.lblReportTitle.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.lblReportTitle.Location = new System.Drawing.Point(20, 20);
+            this.lblReportTitle.Name = "lblReportTitle";
+            this.lblReportTitle.Size = new System.Drawing.Size(179, 28);
+            this.lblReportTitle.TabIndex = 1;
+            this.lblReportTitle.Text = "System Analytics";
+            // 
+            // cmbReportType
+            // 
+            this.cmbReportType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbReportType.FormattingEnabled = true;
+            this.cmbReportType.Items.AddRange(new object[] {
+            "Department-wise Registration",
+            "GPA Distribution",
+            "Top Skills"});
+            this.cmbReportType.Location = new System.Drawing.Point(20, 60);
+            this.cmbReportType.Name = "cmbReportType";
+            this.cmbReportType.Size = new System.Drawing.Size(250, 28);
+            this.cmbReportType.TabIndex = 2;
+            // 
+            // btnShowReport
+            // 
+            this.btnShowReport.Location = new System.Drawing.Point(290, 60);
+            this.btnShowReport.Name = "btnShowReport";
+            this.btnShowReport.Size = new System.Drawing.Size(120, 28);
+            this.btnShowReport.TabIndex = 3;
+            this.btnShowReport.Text = "Show Report";
+            this.btnShowReport.UseVisualStyleBackColor = true;
+            // 
+            // panel2
+            // 
+            this.panel2.BackColor = System.Drawing.Color.White;
+            this.panel2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel2.Location = new System.Drawing.Point(20, 100);
+            this.panel2.Name = "panel2";
+            this.panel2.Size = new System.Drawing.Size(850, 250);
+            this.panel2.TabIndex = 4;
             // 
             // panel1
             // 
@@ -434,6 +483,7 @@ namespace JobFairManagementSystem
             this.btnApproveCompany.Click += new System.EventHandler(this.btnApproveCompany_Click);
             this.btnVerifyStudent.Click += new System.EventHandler(this.btnVerifyStudent_Click);
             this.btnGenerateReports.Click += new System.EventHandler(this.btnGenerateReports_Click);
+            this.btnShowReport.Click += new System.EventHandler(this.btnShowReport_Click);
             this.tabControl1.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
             
             this.ResumeLayout(false);
@@ -473,6 +523,10 @@ namespace JobFairManagementSystem
         private DataGridViewTextBoxColumn GPA;
         private DataGridViewTextBoxColumn StudentStatus;
         private Button btnGenerateReports;
+        private Label lblReportTitle;
+        private ComboBox cmbReportType;
+        private Button btnShowReport;
+        private Panel panel2;
         private Panel panel1;
         private Button btnLogout;
     }
