@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -12,31 +13,341 @@ namespace JobFairManagementSystem
 {
     public partial class RecruiterDashboard : Form
     {
-        public RecruiterDashboard()
+        private int userId;
+        private int recruiterId;
+        private int companyId;
+        private string connectionString = @"Data Source=LAPTOP-K5D96394\SQLEXPRESS;Initial Catalog=CareerConnectDB;Integrated Security=True";
+
+        public RecruiterDashboard(int userId)
         {
             InitializeComponent();
-            // Just for testing, we'll load some dummy data
-            LoadDummyData();
+            this.userId = userId;
+            
+            // Get recruiter and company IDs
+            GetRecruiterInfo();
+            
+            // Load real data from database
+            LoadData();
+        }
+        
+        private void GetRecruiterInfo()
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // First check if the recruiter exists
+                    string checkQuery = @"
+                        SELECT 
+                            r.RecruiterID,
+                            r.CompanyID,
+                            c.CompanyName
+                        FROM Recruiters r
+                        JOIN Companies c ON r.CompanyID = c.CompanyID
+                        WHERE r.UserID = @UserID";
+                    
+                    using (SqlCommand command = new SqlCommand(checkQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@UserID", userId);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                recruiterId = Convert.ToInt32(reader["RecruiterID"]);
+                                companyId = Convert.ToInt32(reader["CompanyID"]);
+                                string companyName = reader["CompanyName"].ToString();
+                                lblWelcome.Text = $"Welcome, {companyName} Recruiter";
+                            }
+                            else
+                            {
+                                // Close the reader before executing other commands
+                                reader.Close();
+                                
+                                // Recruiter not found, check if any company exists
+                                string companyQuery = "SELECT TOP 1 CompanyID, CompanyName FROM Companies";
+                                using (SqlCommand companyCommand = new SqlCommand(companyQuery, connection))
+                                {
+                                    using (SqlDataReader companyReader = companyCommand.ExecuteReader())
+                                    {
+                                        if (companyReader.Read())
+                                        {
+                                            companyId = Convert.ToInt32(companyReader["CompanyID"]);
+                                            string companyName = companyReader["CompanyName"].ToString();
+                                            companyReader.Close();
+                                            
+                                            // Create a recruiter record
+                                            string createQuery = @"
+                                                INSERT INTO Recruiters (RecruiterID, UserID, CompanyID)
+                                                VALUES (@UserID, @UserID, @CompanyID);
+                                                SELECT SCOPE_IDENTITY();";
+                                                
+                                            using (SqlCommand createCommand = new SqlCommand(createQuery, connection))
+                                            {
+                                                createCommand.Parameters.AddWithValue("@UserID", userId);
+                                                createCommand.Parameters.AddWithValue("@CompanyID", companyId);
+                                                
+                                                object result = createCommand.ExecuteScalar();
+                                                if (result != null)
+                                                {
+                                                    recruiterId = Convert.ToInt32(result);
+                                                    lblWelcome.Text = $"Welcome, {companyName} Recruiter";
+                                                    
+                                                    MessageBox.Show("A new recruiter profile has been created for you.",
+                                                        "Profile Created", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                }
+                                                else
+                                                {
+                                                    MessageBox.Show("Failed to create recruiter profile.",
+                                                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                                    this.Close();
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            MessageBox.Show("No companies found in the system. Please add a company first.",
+                                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                            this.Close();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error retrieving recruiter information: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
-        private void LoadDummyData()
+        private void LoadData()
         {
-            // Load applications
-            dgvApplications.Rows.Add("1001", "John Doe", "22K-1234", "Software Engineer", "2023-04-16", "Shortlisted");
-            dgvApplications.Rows.Add("1002", "Jane Smith", "22K-5678", "Software Engineer", "2023-04-18", "Pending");
-            dgvApplications.Rows.Add("1003", "Mike Johnson", "21K-4321", "Software Engineer", "2023-04-20", "Rejected");
-            
-            // Load interviews
-            dgvInterviews.Rows.Add("2001", "John Doe", "Software Engineer", "2023-04-25", "10:00 AM", "Online", "Scheduled");
-            
-            // Load job postings
-            dgvJobs.Rows.Add("101", "Software Engineer", "Full-time", "20", "Active");
-            dgvJobs.Rows.Add("102", "Web Developer", "Internship", "15", "Active");
-            dgvJobs.Rows.Add("103", "UI/UX Designer", "Full-time", "10", "Closed");
-            
-            // Load job fairs
-            dgvJobFairs.Rows.Add("1", "Spring 2023 Career Fair", "2023-04-15", "FAST-NUCES Auditorium", "Registered", "10");
-            dgvJobFairs.Rows.Add("2", "Fall 2023 Tech Expo", "2023-11-20", "FAST-NUCES Main Hall", "Not Registered", "-");
+            LoadApplications();
+            LoadInterviews();
+            LoadJobPostings();
+            LoadJobFairs();
+        }
+
+        private void LoadApplications()
+        {
+            try
+            {
+                dgvApplications.Rows.Clear();
+                
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                        SELECT 
+                            a.ApplicationID,
+                            u.FullName AS StudentName,
+                            s.FAST_ID,
+                            jp.JobTitle,
+                            CONVERT(VARCHAR(10), a.ApplicationDate, 101) AS ApplicationDateFormatted,
+                            a.ApplicationStatus
+                        FROM Applications a
+                        JOIN Students s ON a.StudentID = s.StudentID
+                        JOIN Users u ON s.UserID = u.UserID
+                        JOIN JobPostings jp ON a.JobID = jp.JobID
+                        WHERE jp.CompanyID = @CompanyID
+                        ORDER BY a.ApplicationDate DESC";
+                    
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@CompanyID", companyId);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                dgvApplications.Rows.Add(
+                                    reader["ApplicationID"].ToString(),
+                                    reader["StudentName"].ToString(),
+                                    reader["FAST_ID"].ToString(),
+                                    reader["JobTitle"].ToString(),
+                                    reader["ApplicationDateFormatted"].ToString(),
+                                    reader["ApplicationStatus"].ToString()
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading applications: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LoadInterviews()
+        {
+            try
+            {
+                dgvInterviews.Rows.Clear();
+                
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                        SELECT 
+                            i.InterviewID,
+                            u.FullName AS StudentName,
+                            jp.JobTitle,
+                            CONVERT(VARCHAR(10), i.InterviewDate, 101) AS InterviewDateFormatted,
+                            CONVERT(VARCHAR(10), i.StartTime, 108) AS StartTimeFormatted,
+                            'Online' AS Location,
+                            CASE 
+                                WHEN i.InterviewResult IS NULL THEN 'Scheduled'
+                                ELSE i.InterviewResult 
+                            END AS Status
+                        FROM Interviews i
+                        JOIN Applications a ON i.ApplicationID = a.ApplicationID
+                        JOIN Students s ON a.StudentID = s.StudentID
+                        JOIN Users u ON s.UserID = u.UserID
+                        JOIN JobPostings jp ON a.JobID = jp.JobID
+                        WHERE jp.CompanyID = @CompanyID
+                        ORDER BY i.InterviewDate, i.StartTime";
+                    
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@CompanyID", companyId);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                dgvInterviews.Rows.Add(
+                                    reader["InterviewID"].ToString(),
+                                    reader["StudentName"].ToString(),
+                                    reader["JobTitle"].ToString(),
+                                    reader["InterviewDateFormatted"].ToString(),
+                                    reader["StartTimeFormatted"].ToString(),
+                                    reader["Location"].ToString(),
+                                    reader["Status"].ToString()
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading interviews: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LoadJobPostings()
+        {
+            try
+            {
+                dgvJobs.Rows.Clear();
+                
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                        SELECT 
+                            jp.JobID,
+                            jp.JobTitle,
+                            jp.JobType,
+                            (SELECT COUNT(*) FROM Applications a WHERE a.JobID = jp.JobID) AS ApplicationCount,
+                            'Active' AS Status
+                        FROM JobPostings jp
+                        WHERE jp.CompanyID = @CompanyID
+                        ORDER BY jp.JobID DESC";
+                    
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@CompanyID", companyId);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                dgvJobs.Rows.Add(
+                                    reader["JobID"].ToString(),
+                                    reader["JobTitle"].ToString(),
+                                    reader["JobType"].ToString(),
+                                    reader["ApplicationCount"].ToString(),
+                                    reader["Status"].ToString()
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading job postings: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LoadJobFairs()
+        {
+            try
+            {
+                dgvJobFairs.Rows.Clear();
+                
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                        SELECT 
+                            jf.JobFairID,
+                            jf.EventTitle,
+                            CONVERT(VARCHAR(10), jf.EventDate, 101) AS EventDateFormatted,
+                            jf.Venue,
+                            CASE 
+                                WHEN EXISTS (
+                                    SELECT 1 FROM BoothVisits bv 
+                                    WHERE bv.JobFairID = jf.JobFairID 
+                                    AND bv.CompanyID = @CompanyID
+                                ) THEN 'Registered'
+                                ELSE 'Not Registered'
+                            END AS RegisterStatus,
+                            (SELECT COUNT(DISTINCT StudentID) 
+                             FROM BoothVisits 
+                             WHERE JobFairID = jf.JobFairID 
+                             AND CompanyID = @CompanyID) AS VisitorCount
+                        FROM JobFairEvents jf
+                        ORDER BY jf.EventDate DESC";
+                    
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@CompanyID", companyId);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string visitorCount = reader["VisitorCount"].ToString();
+                                if (reader["RegisterStatus"].ToString() == "Not Registered")
+                                {
+                                    visitorCount = "-";
+                                }
+                                
+                                dgvJobFairs.Rows.Add(
+                                    reader["JobFairID"].ToString(),
+                                    reader["EventTitle"].ToString(),
+                                    reader["EventDateFormatted"].ToString(),
+                                    reader["Venue"].ToString(),
+                                    reader["RegisterStatus"].ToString(),
+                                    visitorCount
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading job fairs: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnViewApplicantProfile_Click(object sender, EventArgs e)
@@ -110,12 +421,36 @@ namespace JobFairManagementSystem
                     var result = form.ShowDialog();
                     if (result == DialogResult.OK)
                     {
-                        // Update the status in the grid
-                        dgvApplications.SelectedRows[0].Cells[5].Value = comboBox.SelectedItem.ToString();
-                        
-                        // In a real application, this would also update the database
-                        MessageBox.Show($"Application status updated to {comboBox.SelectedItem}.", 
-                            "Status Updated", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        try
+                        {
+                            using (SqlConnection connection = new SqlConnection(connectionString))
+                            {
+                                connection.Open();
+                                string updateQuery = @"
+                                    UPDATE Applications
+                                    SET ApplicationStatus = @ApplicationStatus
+                                    WHERE ApplicationID = @ApplicationID";
+                                
+                                using (SqlCommand command = new SqlCommand(updateQuery, connection))
+                                {
+                                    command.Parameters.AddWithValue("@ApplicationStatus", comboBox.SelectedItem.ToString());
+                                    command.Parameters.AddWithValue("@ApplicationID", applicationId);
+                                    
+                                    command.ExecuteNonQuery();
+                                    
+                                    // Update the status in the grid
+                                    dgvApplications.SelectedRows[0].Cells[5].Value = comboBox.SelectedItem.ToString();
+                                    
+                                    MessageBox.Show($"Application status updated to {comboBox.SelectedItem}.", 
+                                        "Status Updated", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Error updating application status: " + ex.Message,
+                                "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
                     }
                 }
             }
@@ -138,9 +473,8 @@ namespace JobFairManagementSystem
                 ScheduleInterviewForm scheduleForm = new ScheduleInterviewForm(applicationId, studentName, jobTitle);
                 if (scheduleForm.ShowDialog() == DialogResult.OK)
                 {
-                    // In a real application, refresh the interviews list
-                    MessageBox.Show("Interview scheduled successfully!", "Success", 
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // Refresh the interviews list
+                    LoadInterviews();
                 }
             }
             else
@@ -171,10 +505,11 @@ namespace JobFairManagementSystem
         private void btnPostNewJob_Click(object sender, EventArgs e)
         {
             // Open job posting form
-            JobPostingForm postingForm = new JobPostingForm();
+            JobPostingForm postingForm = new JobPostingForm(companyId);
             if (postingForm.ShowDialog() == DialogResult.OK)
             {
-                // In a real application, refresh the job postings list
+                // Refresh the job postings list
+                LoadJobPostings();
                 MessageBox.Show("Job posted successfully!", "Success", 
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
@@ -196,16 +531,11 @@ namespace JobFairManagementSystem
                 }
                 
                 // Open job fair registration form
-                JobFairRegistrationForm registrationForm = new JobFairRegistrationForm(fairId, fairName);
+                JobFairRegistrationForm registrationForm = new JobFairRegistrationForm(fairId, fairName, companyId);
                 if (registrationForm.ShowDialog() == DialogResult.OK)
                 {
-                    // Update the status in the grid
-                    dgvJobFairs.SelectedRows[0].Cells[4].Value = "Registered";
-                    dgvJobFairs.SelectedRows[0].Cells[5].Value = "12"; // Booth number
-                    
-                    // In a real application, this would also update the database
-                    MessageBox.Show("Successfully registered for the job fair!", "Registration Successful", 
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // Refresh the job fairs list
+                    LoadJobFairs();
                 }
             }
             else
@@ -213,6 +543,31 @@ namespace JobFairManagementSystem
                 MessageBox.Show("Please select a job fair first.", "No Selection", 
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
+        }
+
+        private void btnViewFairDetails_Click(object sender, EventArgs e)
+        {
+            if (dgvJobFairs.SelectedRows.Count > 0)
+            {
+                string fairId = dgvJobFairs.SelectedRows[0].Cells[0].Value.ToString();
+                string fairName = dgvJobFairs.SelectedRows[0].Cells[1].Value.ToString();
+                
+                // Open job fair details form
+                JobFairDetailsForm detailsForm = new JobFairDetailsForm(fairId, fairName);
+                detailsForm.ShowDialog();
+            }
+            else
+            {
+                MessageBox.Show("Please select a job fair first.", "No Selection", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void btnRefresh_Click(object sender, EventArgs e)
+        {
+            LoadData();
+            MessageBox.Show("Data refreshed successfully!", "Refresh", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void btnLogout_Click(object sender, EventArgs e)
@@ -226,7 +581,22 @@ namespace JobFairManagementSystem
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // You can refresh data based on the selected tab if needed
+            // Refresh data based on the selected tab
+            switch (tabControl1.SelectedIndex)
+            {
+                case 0: // Applications tab
+                    LoadApplications();
+                    break;
+                case 1: // Interviews tab
+                    LoadInterviews();
+                    break;
+                case 2: // Jobs tab
+                    LoadJobPostings();
+                    break;
+                case 3: // Job Fairs tab
+                    LoadJobFairs();
+                    break;
+            }
         }
     }
 } 

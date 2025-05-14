@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -12,119 +13,296 @@ namespace JobFairManagementSystem
 {
     public partial class StudentSkillsForm : Form
     {
-        private List<string> skills = new List<string>();
-        private List<string> certifications = new List<string>();
-
-        public StudentSkillsForm()
+        private int studentId;
+        private string connectionString = @"Data Source=LAPTOP-K5D96394\SQLEXPRESS;Initial Catalog=CareerConnectDB;Integrated Security=True";
+        
+        public StudentSkillsForm(int studentId)
         {
             InitializeComponent();
+            this.studentId = studentId;
+            
+            // Load student skills
+            LoadStudentSkills();
+            // Load available skills
+            LoadAvailableSkills();
+        }
+        
+        private void LoadStudentSkills()
+        {
+            try
+            {
+                lstSkills.Items.Clear();
+                
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                        SELECT s.SkillName
+                        FROM StudentSkills ss
+                        JOIN Skills s ON ss.SkillID = s.SkillID
+                        WHERE ss.StudentID = @StudentID
+                        ORDER BY s.SkillName";
+                    
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@StudentID", studentId);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                lstSkills.Items.Add(reader["SkillName"].ToString());
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading student skills: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        
+        private void LoadAvailableSkills()
+        {
+            try
+            {
+                // This method would normally load skills not already added to student
+                // But we're just working with a single list for now
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading available skills: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnAddSkill_Click(object sender, EventArgs e)
         {
-            string skill = txtSkill.Text.Trim();
-            if (string.IsNullOrEmpty(skill))
+            if (string.IsNullOrEmpty(txtSkill.Text.Trim()))
             {
-                MessageBox.Show("Please enter a skill.", "Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Please enter a skill to add.",
+                    "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            if (!skills.Contains(skill))
+            string selectedSkill = txtSkill.Text.Trim();
+            
+            try
             {
-                skills.Add(skill);
-                lstSkills.Items.Add(skill);
-                txtSkill.Clear();
-                txtSkill.Focus();
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // Get the skill ID
+                    string getSkillIdQuery = "SELECT SkillID FROM Skills WHERE SkillName = @SkillName";
+                    
+                    using (SqlCommand command = new SqlCommand(getSkillIdQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@SkillName", selectedSkill);
+                        object skillIdObj = command.ExecuteScalar();
+                        
+                        if (skillIdObj != null)
+                        {
+                            int skillId = Convert.ToInt32(skillIdObj);
+                            
+                            // Add the skill to the student's skills
+                            string insertQuery = @"
+                                INSERT INTO StudentSkills (StudentID, SkillID)
+                                VALUES (@StudentID, @SkillID)";
+                            
+                            using (SqlCommand insertCommand = new SqlCommand(insertQuery, connection))
+                            {
+                                insertCommand.Parameters.AddWithValue("@StudentID", studentId);
+                                insertCommand.Parameters.AddWithValue("@SkillID", skillId);
+                                
+                                insertCommand.ExecuteNonQuery();
+                                
+                                // Refresh the lists
+                                LoadStudentSkills();
+                                LoadAvailableSkills();
+                                txtSkill.Clear();
+                            }
+                        }
+                        else
+                        {
+                            // Skill doesn't exist, so add it
+                            AddNewSkill(selectedSkill);
+                        }
+                    }
+                }
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("This skill is already in your list.", "Duplicate Skill", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Error adding skill: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void btnRemoveSkill_Click(object sender, EventArgs e)
         {
-            if (lstSkills.SelectedIndex != -1)
+            if (lstSkills.SelectedItem == null)
             {
-                skills.RemoveAt(lstSkills.SelectedIndex);
-                lstSkills.Items.RemoveAt(lstSkills.SelectedIndex);
-            }
-            else
-            {
-                MessageBox.Show("Please select a skill to remove.", "Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void btnAddCert_Click(object sender, EventArgs e)
-        {
-            string certTitle = txtCertTitle.Text.Trim();
-            string certIssuer = txtCertIssuer.Text.Trim();
-            DateTime issueDate = dtpCertDate.Value;
-
-            if (string.IsNullOrEmpty(certTitle) || string.IsNullOrEmpty(certIssuer))
-            {
-                MessageBox.Show("Please enter both the certification title and issuer.", "Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Please select a skill to remove.",
+                    "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            string certification = $"{certTitle} by {certIssuer} ({issueDate.ToShortDateString()})";
+            string selectedSkill = lstSkills.SelectedItem.ToString();
             
-            if (!certifications.Contains(certification))
+            try
             {
-                certifications.Add(certification);
-                lstCertifications.Items.Add(certification);
-                txtCertTitle.Clear();
-                txtCertIssuer.Clear();
-                dtpCertDate.Value = DateTime.Today;
-                txtCertTitle.Focus();
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // Get the skill ID
+                    string getSkillIdQuery = "SELECT SkillID FROM Skills WHERE SkillName = @SkillName";
+                    
+                    using (SqlCommand command = new SqlCommand(getSkillIdQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@SkillName", selectedSkill);
+                        object skillIdObj = command.ExecuteScalar();
+                        
+                        if (skillIdObj != null)
+                        {
+                            int skillId = Convert.ToInt32(skillIdObj);
+                            
+                            // Remove the skill from the student's skills
+                            string deleteQuery = @"
+                                DELETE FROM StudentSkills 
+                                WHERE StudentID = @StudentID 
+                                AND SkillID = @SkillID";
+                            
+                            using (SqlCommand deleteCommand = new SqlCommand(deleteQuery, connection))
+                            {
+                                deleteCommand.Parameters.AddWithValue("@StudentID", studentId);
+                                deleteCommand.Parameters.AddWithValue("@SkillID", skillId);
+                                
+                                deleteCommand.ExecuteNonQuery();
+                                
+                                // Refresh the lists
+                                LoadStudentSkills();
+                                LoadAvailableSkills();
+                            }
+                        }
+                    }
+                }
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("This certification is already in your list.", "Duplicate Certification", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Error removing skill: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private void btnRemoveCert_Click(object sender, EventArgs e)
+        private void AddNewSkill(string newSkill)
         {
-            if (lstCertifications.SelectedIndex != -1)
+            try
             {
-                certifications.RemoveAt(lstCertifications.SelectedIndex);
-                lstCertifications.Items.RemoveAt(lstCertifications.SelectedIndex);
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // Check if skill already exists
+                    string checkQuery = "SELECT COUNT(*) FROM Skills WHERE SkillName = @SkillName";
+                    
+                    using (SqlCommand checkCommand = new SqlCommand(checkQuery, connection))
+                    {
+                        checkCommand.Parameters.AddWithValue("@SkillName", newSkill);
+                        int count = (int)checkCommand.ExecuteScalar();
+                        
+                        if (count > 0)
+                        {
+                            MessageBox.Show("This skill already exists in the system.",
+                                "Duplicate Skill", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            txtSkill.Clear();
+                            return;
+                        }
+                    }
+                    
+                    // Add the new skill
+                    string insertSkillQuery = @"
+                        INSERT INTO Skills (SkillName)
+                        VALUES (@SkillName);
+                        SELECT SCOPE_IDENTITY();";
+                    
+                    using (SqlCommand insertCommand = new SqlCommand(insertSkillQuery, connection))
+                    {
+                        insertCommand.Parameters.AddWithValue("@SkillName", newSkill);
+                        
+                        decimal skillId = (decimal)insertCommand.ExecuteScalar();
+                        
+                        // Add the skill to the student's skills
+                        string insertStudentSkillQuery = @"
+                            INSERT INTO StudentSkills (StudentID, SkillID)
+                            VALUES (@StudentID, @SkillID)";
+                        
+                        using (SqlCommand insertStudentSkillCommand = new SqlCommand(insertStudentSkillQuery, connection))
+                        {
+                            insertStudentSkillCommand.Parameters.AddWithValue("@StudentID", studentId);
+                            insertStudentSkillCommand.Parameters.AddWithValue("@SkillID", (int)skillId);
+                            
+                            insertStudentSkillCommand.ExecuteNonQuery();
+                            
+                            // Refresh the lists
+                            LoadStudentSkills();
+                            LoadAvailableSkills();
+                            txtSkill.Clear();
+                            
+                            MessageBox.Show($"Skill '{newSkill}' has been added successfully!",
+                                "Skill Added", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    }
+                }
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("Please select a certification to remove.", "Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Error adding new skill: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+        
+        private void btnAddCert_Click(object sender, EventArgs e)
+        {
+            // Validation
+            if (string.IsNullOrEmpty(txtCertTitle.Text.Trim()))
+            {
+                MessageBox.Show("Please enter a certification title.",
+                    "Missing Information", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtCertTitle.Focus();
+                return;
+            }
+            
+            if (string.IsNullOrEmpty(txtCertIssuer.Text.Trim()))
+            {
+                MessageBox.Show("Please enter the certification issuer.",
+                    "Missing Information", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtCertIssuer.Focus();
+                return;
+            }
+            
+            // Add the certification to the list
+            string certDetails = $"{txtCertTitle.Text.Trim()} - {txtCertIssuer.Text.Trim()} ({dtpCertDate.Value.ToString("MM/yyyy")})";
+            lstCertifications.Items.Add(certDetails);
+            
+            // Clear inputs
+            txtCertTitle.Clear();
+            txtCertIssuer.Clear();
+            dtpCertDate.Value = DateTime.Now;
+            txtCertTitle.Focus();
         }
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            // Here we would normally save the skills and certifications to the database
-            // For now, we'll just show a success message
-
-            MessageBox.Show("Skills and certifications saved successfully!", 
-                "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            
-            // Redirect to student dashboard
-            StudentDashboard dashboard = new StudentDashboard();
-            this.Hide();
-            dashboard.FormClosed += (s, args) => this.Close();
-            dashboard.Show();
+            this.DialogResult = DialogResult.OK;
+            this.Close();
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show("Are you sure you want to cancel? All skills and certifications will be lost.", 
-                "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-            {
-                this.Close();
-            }
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
         }
     }
 } 

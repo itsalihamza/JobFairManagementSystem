@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -12,15 +13,65 @@ namespace JobFairManagementSystem
 {
     public partial class JobPostingForm : Form
     {
+        private int companyId;
+        private string connectionString = @"Data Source=LAPTOP-K5D96394\SQLEXPRESS;Initial Catalog=CareerConnectDB;Integrated Security=True";
         private List<string> skills = new List<string>();
+        private Label lblCompanyNameValue;
 
-        public JobPostingForm()
+        public JobPostingForm(int companyId)
         {
             InitializeComponent();
+            this.companyId = companyId;
             
-            // Initialize combo boxes
-            cmbJobType.SelectedIndex = 0; // Default to Full-time
-            cmbStatus.SelectedIndex = 0; // Default to Active
+            // Setup job type combobox
+            cmbJobType.Items.AddRange(new string[] { "Full-time", "Internship" });
+            cmbJobType.SelectedIndex = 0;
+            
+            // Create the company name label dynamically since it's missing from the Designer
+            lblCompanyNameValue = new Label();
+            lblCompanyNameValue.AutoSize = true;
+            lblCompanyNameValue.Location = new Point(200, 80);
+            lblCompanyNameValue.Name = "lblCompanyNameValue";
+            lblCompanyNameValue.Size = new Size(100, 20);
+            lblCompanyNameValue.Text = "Loading...";
+            this.Controls.Add(lblCompanyNameValue);
+            
+            // Load company information
+            LoadCompanyInfo();
+        }
+
+        private void LoadCompanyInfo()
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT CompanyName FROM Companies WHERE CompanyID = @CompanyID";
+                    
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@CompanyID", companyId);
+                        string companyName = (string)command.ExecuteScalar();
+                        
+                        if (!string.IsNullOrEmpty(companyName))
+                        {
+                            lblCompanyNameValue.Text = companyName;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Company information not found.",
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            this.Close();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading company information: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnAddSkill_Click(object sender, EventArgs e)
@@ -63,56 +114,86 @@ namespace JobFairManagementSystem
 
         private void btnPost_Click(object sender, EventArgs e)
         {
-            // Validate form input
-            if (string.IsNullOrEmpty(txtJobTitle.Text.Trim()))
+            // Validate inputs
+            if (string.IsNullOrWhiteSpace(txtJobTitle.Text))
             {
-                MessageBox.Show("Please enter a job title.", "Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Please enter a job title.", 
+                    "Missing Information", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtJobTitle.Focus();
                 return;
             }
 
-            if (string.IsNullOrEmpty(txtDescription.Text.Trim()))
+            if (string.IsNullOrWhiteSpace(txtSalary.Text))
             {
-                MessageBox.Show("Please enter a job description.", "Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                txtDescription.Focus();
+                MessageBox.Show("Please enter a salary range.", 
+                    "Missing Information", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtSalary.Focus();
                 return;
             }
 
             if (lstSkills.Items.Count == 0)
             {
-                MessageBox.Show("Please add at least one required skill.", "Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Please add at least one required skill.", 
+                    "Missing Information", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtSkill.Focus();
                 return;
             }
 
-            if (!int.TryParse(txtVacancies.Text, out int vacancies) || vacancies <= 0)
+            if (string.IsNullOrWhiteSpace(txtDescription.Text))
             {
-                MessageBox.Show("Please enter a valid number of vacancies.", "Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                txtVacancies.Focus();
+                MessageBox.Show("Please enter a job description.", 
+                    "Missing Information", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtDescription.Focus();
                 return;
             }
 
-            // Get form data
-            string jobTitle = txtJobTitle.Text.Trim();
-            string description = txtDescription.Text.Trim();
-            string salary = txtSalary.Text.Trim();
-            string jobType = cmbJobType.SelectedItem.ToString();
-            string status = cmbStatus.SelectedItem.ToString();
-            int numVacancies = vacancies;
-            DateTime postDate = dtpPostDate.Value;
-
-            // In a real application, this would save the job posting to the database
-            // For now, we'll just show a success message
-
-            string message = $"Job posting for '{jobTitle}' has been created successfully.";
-            MessageBox.Show(message, "Job Posted", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            
-            this.DialogResult = DialogResult.OK;
-            this.Close();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string insertQuery = @"
+                        INSERT INTO JobPostings (
+                            CompanyID,
+                            JobTitle,
+                            JobType,
+                            SalaryRange,
+                            RequiredSkills,
+                            Description
+                        )
+                        VALUES (
+                            @CompanyID,
+                            @JobTitle,
+                            @JobType,
+                            @SalaryRange,
+                            @RequiredSkills,
+                            @Description
+                        )";
+                    
+                    using (SqlCommand command = new SqlCommand(insertQuery, connection))
+                    {
+                        // Join skills list into a comma-separated string
+                        string requiredSkills = string.Join(", ", skills);
+                        
+                        command.Parameters.AddWithValue("@CompanyID", companyId);
+                        command.Parameters.AddWithValue("@JobTitle", txtJobTitle.Text.Trim());
+                        command.Parameters.AddWithValue("@JobType", cmbJobType.SelectedItem.ToString());
+                        command.Parameters.AddWithValue("@SalaryRange", txtSalary.Text.Trim());
+                        command.Parameters.AddWithValue("@RequiredSkills", requiredSkills);
+                        command.Parameters.AddWithValue("@Description", txtDescription.Text.Trim());
+                        
+                        command.ExecuteNonQuery();
+                        
+                        this.DialogResult = DialogResult.OK;
+                        this.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error posting job: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnCancel_Click(object sender, EventArgs e)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -12,6 +13,9 @@ namespace JobFairManagementSystem
 {
     public partial class RegisterForm : Form
     {
+        // Connection string for SQL Server
+        private string connectionString = @"Data Source=LAPTOP-K5D96394\SQLEXPRESS;Initial Catalog=CareerConnectDB;Integrated Security=True";
+        
         public RegisterForm()
         {
             InitializeComponent();
@@ -94,19 +98,120 @@ namespace JobFairManagementSystem
             // Show loading cursor
             Cursor = Cursors.WaitCursor;
             
-            // Simulate a short delay for account creation
-            System.Threading.Thread.Sleep(1000);
+            // Register user in the database
+            bool registered = RegisterUser();
             
             // Reset cursor
             Cursor = Cursors.Default;
 
-            // Here we would normally save the user details to a database
-            // For now, just show a success message
-            MessageBox.Show($"Account created successfully!\nWelcome to CareerConnect, {txtName.Text}.", 
-                "Registration Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (registered)
+            {
+                MessageBox.Show($"Account created successfully!\nWelcome to CareerConnect, {txtName.Text}.\nYour account will be reviewed by an administrator.", 
+                    "Registration Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            this.DialogResult = DialogResult.OK;
-            this.Close();
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+            }
+        }
+        
+        private bool RegisterUser()
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // Check if email already exists
+                    string checkQuery = "SELECT COUNT(*) FROM Users WHERE Email = @Email";
+                    using (SqlCommand checkCommand = new SqlCommand(checkQuery, connection))
+                    {
+                        checkCommand.Parameters.AddWithValue("@Email", txtEmail.Text.Trim());
+                        int existingCount = (int)checkCommand.ExecuteScalar();
+                        
+                        if (existingCount > 0)
+                        {
+                            ShowError("This email address is already registered. Please use a different email.");
+                            return false;
+                        }
+                    }
+                    
+                    // Insert new user
+                    string insertQuery = @"
+                        INSERT INTO Users (FullName, Email, Password, Role, IsApproved)
+                        VALUES (@FullName, @Email, @Password, @Role, 0);
+                        SELECT SCOPE_IDENTITY();";
+                    
+                    using (SqlCommand insertCommand = new SqlCommand(insertQuery, connection))
+                    {
+                        insertCommand.Parameters.AddWithValue("@FullName", txtName.Text.Trim());
+                        insertCommand.Parameters.AddWithValue("@Email", txtEmail.Text.Trim());
+                        insertCommand.Parameters.AddWithValue("@Password", txtPassword.Text);
+                        insertCommand.Parameters.AddWithValue("@Role", cmbRole.SelectedItem.ToString());
+                        
+                        // Execute and get the new UserID
+                        decimal userId = (decimal)insertCommand.ExecuteScalar();
+                        
+                        // If the user is a student, we'll need to create a record in the Students table too
+                        if (cmbRole.SelectedItem.ToString() == "Student")
+                        {
+                            // For now, we'll generate a placeholder FAST_ID
+                            string year = DateTime.Now.Year.ToString().Substring(2);
+                            string fastId = $"{year}I-{userId:0000}";
+                            
+                            string studentQuery = @"
+                                INSERT INTO Students (StudentID, UserID, FAST_ID, DegreeProgram, CurrentSemester, GPA)
+                                VALUES (@StudentID, @UserID, @FAST_ID, 'CS', 1, 0.0)";
+                            
+                            using (SqlCommand studentCommand = new SqlCommand(studentQuery, connection))
+                            {
+                                studentCommand.Parameters.AddWithValue("@StudentID", (int)userId);
+                                studentCommand.Parameters.AddWithValue("@UserID", (int)userId);
+                                studentCommand.Parameters.AddWithValue("@FAST_ID", fastId);
+                                
+                                studentCommand.ExecuteNonQuery();
+                            }
+                        }
+                        else if (cmbRole.SelectedItem.ToString() == "Recruiter")
+                        {
+                            // For recruiters, we'd need to assign a company, but we'll leave this for another form
+                            string recruiterQuery = @"
+                                INSERT INTO Recruiters (RecruiterID, UserID, CompanyID)
+                                VALUES (@RecruiterID, @UserID, 1)"; // Default to first company for now
+                            
+                            using (SqlCommand recruiterCommand = new SqlCommand(recruiterQuery, connection))
+                            {
+                                recruiterCommand.Parameters.AddWithValue("@RecruiterID", (int)userId);
+                                recruiterCommand.Parameters.AddWithValue("@UserID", (int)userId);
+                                
+                                recruiterCommand.ExecuteNonQuery();
+                            }
+                        }
+                        else if (cmbRole.SelectedItem.ToString() == "Coordinator")
+                        {
+                            // Create coordinator record
+                            string coordinatorQuery = @"
+                                INSERT INTO BoothCoordinators (CoordinatorID, UserID, AssignedFairID)
+                                VALUES (@CoordinatorID, @UserID, 1)"; // Default to first job fair for now
+                            
+                            using (SqlCommand coordinatorCommand = new SqlCommand(coordinatorQuery, connection))
+                            {
+                                coordinatorCommand.Parameters.AddWithValue("@CoordinatorID", (int)userId);
+                                coordinatorCommand.Parameters.AddWithValue("@UserID", (int)userId);
+                                
+                                coordinatorCommand.ExecuteNonQuery();
+                            }
+                        }
+                        
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError("Registration failed: " + ex.Message);
+                return false;
+            }
         }
 
         private void btnCancel_Click(object sender, EventArgs e)

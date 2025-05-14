@@ -12,6 +12,21 @@ namespace JobFairManagementSystem
 {
     public partial class CoordinatorDashboard : Form
     {
+        private int userId;
+        private string connectionString = @"Data Source=LAPTOP-K5D96394\SQLEXPRESS;Initial Catalog=CareerConnectDB;Integrated Security=True";
+        
+        public CoordinatorDashboard(int userId)
+        {
+            InitializeComponent();
+            this.userId = userId;
+            
+            // Set welcome label
+            lblWelcome.Text = "Welcome, Coordinator";
+            
+            // Load some dummy data for testing
+            LoadDummyData();
+        }
+
         public CoordinatorDashboard()
         {
             InitializeComponent();
@@ -141,6 +156,11 @@ namespace JobFairManagementSystem
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
             // Refresh data if needed when tab changes
+        }
+
+        private void CoordinatorDashboard_Load(object sender, EventArgs e)
+        {
+
         }
     }
 } 

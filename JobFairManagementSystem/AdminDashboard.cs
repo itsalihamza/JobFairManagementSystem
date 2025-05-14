@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -12,9 +13,14 @@ namespace JobFairManagementSystem
 {
     public partial class AdminDashboard : Form
     {
-        public AdminDashboard()
+        private int userId;
+        private string connectionString = @"Data Source=LAPTOP-K5D96394\SQLEXPRESS;Initial Catalog=CareerConnectDB;Integrated Security=True";
+        
+        public AdminDashboard(int userId)
         {
             InitializeComponent();
+            this.userId = userId;
+            
             // Set welcome label
             lblWelcome.Text = "Welcome, Admin";
             

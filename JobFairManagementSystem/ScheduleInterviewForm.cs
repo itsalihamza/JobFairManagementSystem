@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -15,58 +16,201 @@ namespace JobFairManagementSystem
         private string applicationId;
         private string studentName;
         private string jobTitle;
+        private string connectionString = @"Data Source=LAPTOP-K5D96394\SQLEXPRESS;Initial Catalog=CareerConnectDB;Integrated Security=True";
 
         public ScheduleInterviewForm(string applicationId, string studentName, string jobTitle)
         {
             InitializeComponent();
-            
             this.applicationId = applicationId;
             this.studentName = studentName;
             this.jobTitle = jobTitle;
             
-            // Set labels with applicant information
             lblStudentNameValue.Text = studentName;
             lblJobTitleValue.Text = jobTitle;
             
-            // Set default date to tomorrow
-            dtpInterviewDate.Value = DateTime.Today.AddDays(1);
+            // Set the minimum date to tomorrow
+            dtpInterviewDate.MinDate = DateTime.Now.AddDays(1);
             
-            // Initialize combo boxes
-            cmbInterviewType.SelectedIndex = 0; // Default to Online
-            cmbDuration.SelectedIndex = 2; // Default to 45 minutes
+            // Default values
+            dtpInterviewDate.Value = DateTime.Now.AddDays(3);
+            dtpInterviewTime.Value = DateTime.Today.AddHours(10);
+            cmbInterviewType.SelectedIndex = 0; // Online
+            cmbDuration.SelectedIndex = 1; // 30 minutes
+            
+            // Load application information
+            LoadApplicationInfo();
+        }
+        
+        private void LoadApplicationInfo()
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // Check if interview already exists
+                    string checkQuery = @"
+                        SELECT 
+                            InterviewID,
+                            CONVERT(VARCHAR(10), InterviewDate, 101) AS InterviewDateFormatted,
+                            CONVERT(VARCHAR(10), StartTime, 108) AS StartTimeFormatted,
+                            CONVERT(VARCHAR(10), EndTime, 108) AS EndTimeFormatted
+                        FROM Interviews
+                        WHERE ApplicationID = @ApplicationID";
+                    
+                    using (SqlCommand command = new SqlCommand(checkQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@ApplicationID", applicationId);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                // Interview already exists
+                                string interviewDate = reader["InterviewDateFormatted"].ToString();
+                                string startTime = reader["StartTimeFormatted"].ToString();
+                                string endTime = reader["EndTimeFormatted"].ToString();
+                                
+                                MessageBox.Show($"An interview is already scheduled for this application on {interviewDate} from {startTime} to {endTime}. " +
+                                    "You can update the existing interview or schedule a new one.",
+                                    "Interview Exists", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                        }
+                    }
+                    
+                    // Update application status if it's "Pending"
+                    string updateQuery = @"
+                        UPDATE Applications
+                        SET ApplicationStatus = 'Shortlisted'
+                        WHERE ApplicationID = @ApplicationID
+                        AND ApplicationStatus = 'Pending'";
+                    
+                    using (SqlCommand updateCommand = new SqlCommand(updateQuery, connection))
+                    {
+                        updateCommand.Parameters.AddWithValue("@ApplicationID", applicationId);
+                        updateCommand.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading application information: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnSchedule_Click(object sender, EventArgs e)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(txtLocation.Text))
+            // Calculate expected end time based on duration selection
+            DateTime startTime = dtpInterviewTime.Value;
+            DateTime endTime = startTime;
+            
+            switch(cmbDuration.SelectedIndex)
             {
-                MessageBox.Show("Please enter the interview location.", "Missing Information", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                txtLocation.Focus();
-                return;
+                case 0: // 15 minutes
+                    endTime = startTime.AddMinutes(15);
+                    break;
+                case 1: // 30 minutes
+                    endTime = startTime.AddMinutes(30);
+                    break;
+                case 2: // 45 minutes
+                    endTime = startTime.AddMinutes(45);
+                    break;
+                case 3: // 1 hour
+                    endTime = startTime.AddHours(1);
+                    break;
+                case 4: // 1.5 hours
+                    endTime = startTime.AddMinutes(90);
+                    break;
+                case 5: // 2 hours
+                    endTime = startTime.AddHours(2);
+                    break;
+                default:
+                    endTime = startTime.AddMinutes(30);
+                    break;
             }
 
-            // In a real application, this would save the interview details to the database
-            // For simplicity, we'll just show a success message
-
-            string interviewDate = dtpInterviewDate.Value.ToShortDateString();
-            string interviewTime = dtpInterviewTime.Value.ToShortTimeString();
-            string interviewType = cmbInterviewType.SelectedItem.ToString();
-            string duration = cmbDuration.SelectedItem.ToString();
-            string location = txtLocation.Text;
-            string notes = txtNotes.Text;
-
-            string message = $"Interview with {studentName} for {jobTitle} position has been scheduled for " +
-                $"{interviewDate} at {interviewTime}.\n\n" +
-                $"Type: {interviewType}\n" +
-                $"Duration: {duration}\n" +
-                $"Location: {location}";
-
-            MessageBox.Show(message, "Interview Scheduled", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            
-            this.DialogResult = DialogResult.OK;
-            this.Close();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // Check if interview already exists
+                    string checkQuery = "SELECT COUNT(*) FROM Interviews WHERE ApplicationID = @ApplicationID";
+                    
+                    using (SqlCommand checkCommand = new SqlCommand(checkQuery, connection))
+                    {
+                        checkCommand.Parameters.AddWithValue("@ApplicationID", applicationId);
+                        int count = (int)checkCommand.ExecuteScalar();
+                        
+                        if (count > 0)
+                        {
+                            // Update existing interview
+                            string updateQuery = @"
+                                UPDATE Interviews
+                                SET InterviewDate = @InterviewDate,
+                                    StartTime = @StartTime,
+                                    EndTime = @EndTime,
+                                    InterviewResult = NULL
+                                WHERE ApplicationID = @ApplicationID";
+                            
+                            using (SqlCommand updateCommand = new SqlCommand(updateQuery, connection))
+                            {
+                                updateCommand.Parameters.AddWithValue("@InterviewDate", dtpInterviewDate.Value.Date);
+                                updateCommand.Parameters.AddWithValue("@StartTime", dtpInterviewTime.Value.TimeOfDay);
+                                updateCommand.Parameters.AddWithValue("@EndTime", endTime.TimeOfDay);
+                                updateCommand.Parameters.AddWithValue("@ApplicationID", applicationId);
+                                
+                                updateCommand.ExecuteNonQuery();
+                                
+                                MessageBox.Show("Interview has been rescheduled successfully!",
+                                    "Interview Rescheduled", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                        }
+                        else
+                        {
+                            // Insert new interview
+                            string insertQuery = @"
+                                INSERT INTO Interviews (
+                                    ApplicationID,
+                                    InterviewDate,
+                                    StartTime,
+                                    EndTime,
+                                    InterviewResult
+                                )
+                                VALUES (
+                                    @ApplicationID,
+                                    @InterviewDate,
+                                    @StartTime,
+                                    @EndTime,
+                                    NULL
+                                )";
+                            
+                            using (SqlCommand insertCommand = new SqlCommand(insertQuery, connection))
+                            {
+                                insertCommand.Parameters.AddWithValue("@ApplicationID", applicationId);
+                                insertCommand.Parameters.AddWithValue("@InterviewDate", dtpInterviewDate.Value.Date);
+                                insertCommand.Parameters.AddWithValue("@StartTime", dtpInterviewTime.Value.TimeOfDay);
+                                insertCommand.Parameters.AddWithValue("@EndTime", endTime.TimeOfDay);
+                                
+                                insertCommand.ExecuteNonQuery();
+                                
+                                MessageBox.Show("Interview has been scheduled successfully!",
+                                    "Interview Scheduled", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                        }
+                        
+                        this.DialogResult = DialogResult.OK;
+                        this.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error scheduling interview: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnCancel_Click(object sender, EventArgs e)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -14,61 +15,135 @@ namespace JobFairManagementSystem
     {
         private string fairId;
         private string fairName;
+        private int companyId;
+        private string connectionString = @"Data Source=LAPTOP-K5D96394\SQLEXPRESS;Initial Catalog=CareerConnectDB;Integrated Security=True";
 
-        public JobFairRegistrationForm(string fairId, string fairName)
+        public JobFairRegistrationForm(string fairId, string fairName, int companyId)
         {
             InitializeComponent();
             
             this.fairId = fairId;
             this.fairName = fairName;
+            this.companyId = companyId;
             
             // Set fair name in title
             lblFairNameValue.Text = fairName;
             
-            // Load fair details
+            // Load fair details and company info
             LoadFairDetails();
+            LoadCompanyInfo();
+        }
+        
+        private void LoadCompanyInfo()
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT CompanyName FROM Companies WHERE CompanyID = @CompanyID";
+                    
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@CompanyID", companyId);
+                        object result = command.ExecuteScalar();
+                        
+                        if (result != null)
+                        {
+                            // Set company name somewhere in the form if needed
+                            this.Text = $"{result.ToString()} - {fairName} Registration";
+                        }
+                        else
+                        {
+                            MessageBox.Show("Company information not found.",
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            this.Close();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading company information: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void LoadFairDetails()
         {
-            // In a real application, this would fetch data from the database
-            // For now, we'll just set some dummy data based on the fair ID
-            
-            if (fairId == "1") // Spring 2023
+            try
             {
-                lblDateValue.Text = "April 15, 2023";
-                lblVenueValue.Text = "FAST-NUCES Auditorium";
-                lblTimeValue.Text = "10:00 AM - 4:00 PM";
-                lblRegistrationFeeValue.Text = "$500";
-                
-                txtDescription.Text = "The Spring 2023 Career Fair at FAST-NUCES Islamabad is an excellent opportunity " +
-                    "for companies to connect with top talent in the IT industry. Students from CS, SE, AI, and DS " +
-                    "programs will be attending. Each participating company will be provided with a booth, " +
-                    "basic furniture, and Wi-Fi access.";
-                
-                // Pre-select some common job positions
-                chkSoftwareEngineer.Checked = true;
-                chkWebDeveloper.Checked = true;
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                        SELECT 
+                            EventTitle,
+                            CONVERT(VARCHAR(10), EventDate, 101) AS EventDateFormatted,
+                            Venue,
+                            CONVERT(VARCHAR(10), StartTime, 108) AS StartTimeFormatted,
+                            CONVERT(VARCHAR(10), EndTime, 108) AS EndTimeFormatted
+                        FROM JobFairEvents
+                        WHERE JobFairID = @JobFairID";
+                    
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@JobFairID", fairId);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                lblDateValue.Text = reader["EventDateFormatted"].ToString();
+                                lblVenueValue.Text = reader["Venue"].ToString();
+                                lblTimeValue.Text = $"{reader["StartTimeFormatted"]} - {reader["EndTimeFormatted"]}";
+                                
+                                // The rest of the information could be either hard-coded or also in the database
+                                lblRegistrationFeeValue.Text = "$500"; // Example
+                                
+                                txtDescription.Text = $"The {reader["EventTitle"]} at {reader["Venue"]} is an excellent opportunity " +
+                                    "for companies to connect with top talent in the IT industry. Students from CS, SE, AI, and DS " +
+                                    "programs will be attending. Each participating company will be provided with a booth, " +
+                                    "basic furniture, and Wi-Fi access.";
+                            }
+                            else
+                            {
+                                MessageBox.Show("Job fair details not found.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                this.Close();
+                            }
+                        }
+                    }
+                    
+                    // Check if already registered
+                    string checkQuery = @"
+                        SELECT COUNT(*) 
+                        FROM BoothVisits 
+                        WHERE CompanyID = @CompanyID 
+                        AND JobFairID = @JobFairID";
+                    
+                    using (SqlCommand checkCommand = new SqlCommand(checkQuery, connection))
+                    {
+                        checkCommand.Parameters.AddWithValue("@CompanyID", companyId);
+                        checkCommand.Parameters.AddWithValue("@JobFairID", fairId);
+                        
+                        int count = (int)checkCommand.ExecuteScalar();
+                        
+                        if (count > 0)
+                        {
+                            MessageBox.Show("Your company is already registered for this job fair.",
+                                "Already Registered", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            
+                            // Disable registration
+                            btnRegister.Enabled = false;
+                            chkAgreeTerms.Enabled = false;
+                        }
+                    }
+                }
             }
-            else if (fairId == "2") // Fall 2023
+            catch (Exception ex)
             {
-                lblDateValue.Text = "November 20, 2023";
-                lblVenueValue.Text = "FAST-NUCES Main Hall";
-                lblTimeValue.Text = "9:00 AM - 3:00 PM";
-                lblRegistrationFeeValue.Text = "$600";
-                
-                txtDescription.Text = "The Fall 2023 Tech Expo at FAST-NUCES Islamabad will focus on cutting-edge technologies " +
-                    "and innovation. This is a unique opportunity to meet with students specializing in AI, data science, " +
-                    "cloud computing, and cybersecurity. Early registration is recommended as space is limited.";
-                
-                // Pre-select some common job positions
-                chkDataScientist.Checked = true;
-                chkAIEngineer.Checked = true;
-            }
-            else
-            {
-                txtDescription.Text = "Please contact the career center for more details about this job fair.";
-                lblRegistrationFeeValue.Text = "TBD";
+                MessageBox.Show("Error loading job fair details: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -100,15 +175,48 @@ namespace JobFairManagementSystem
                 return;
             }
 
-            // In a real application, this would save the registration to the database
-            // For now, we'll just show a success message
-            
-            string message = $"Your company has been successfully registered for the {fairName}.\n\n" +
-                $"A confirmation email with additional details will be sent shortly.";
-            MessageBox.Show(message, "Registration Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            
-            this.DialogResult = DialogResult.OK;
-            this.Close();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // Register for the job fair
+                    string insertQuery = @"
+                        INSERT INTO BoothVisits (
+                            StudentID,
+                            CompanyID,
+                            JobFairID,
+                            CheckInTime
+                        )
+                        VALUES (
+                            NULL,
+                            @CompanyID,
+                            @JobFairID,
+                            NULL
+                        )";
+                    
+                    using (SqlCommand insertCommand = new SqlCommand(insertQuery, connection))
+                    {
+                        insertCommand.Parameters.AddWithValue("@CompanyID", companyId);
+                        insertCommand.Parameters.AddWithValue("@JobFairID", fairId);
+                        
+                        insertCommand.ExecuteNonQuery();
+                        
+                        MessageBox.Show($"Your company has been successfully registered for the {fairName}.\n\n" +
+                            "A confirmation email with additional details will be sent shortly.",
+                            "Registration Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        
+                        this.DialogResult = DialogResult.OK;
+                        this.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error registering for job fair: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnCancel_Click(object sender, EventArgs e)

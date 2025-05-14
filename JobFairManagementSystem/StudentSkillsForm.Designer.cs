@@ -253,15 +253,14 @@ namespace JobFairManagementSystem
             btnRemoveCert.TabIndex = 4;
             btnRemoveCert.Text = "Remove";
             btnRemoveCert.UseVisualStyleBackColor = false;
-            btnRemoveCert.Click += btnRemoveCert_Click;
             
             // btnSave
             // 
             btnSave.BackColor = Color.RoyalBlue;
             btnSave.ForeColor = Color.White;
-            btnSave.Location = new Point(420, 440);
+            btnSave.Location = new Point(470, 440);
             btnSave.Name = "btnSave";
-            btnSave.Size = new Size(120, 40);
+            btnSave.Size = new Size(100, 40);
             btnSave.TabIndex = 1;
             btnSave.Text = "Save";
             btnSave.UseVisualStyleBackColor = false;
@@ -269,12 +268,14 @@ namespace JobFairManagementSystem
             
             // btnCancel
             // 
-            btnCancel.Location = new Point(560, 440);
+            btnCancel.BackColor = Color.Gray;
+            btnCancel.ForeColor = Color.White;
+            btnCancel.Location = new Point(580, 440);
             btnCancel.Name = "btnCancel";
-            btnCancel.Size = new Size(120, 40);
+            btnCancel.Size = new Size(100, 40);
             btnCancel.TabIndex = 2;
             btnCancel.Text = "Cancel";
-            btnCancel.UseVisualStyleBackColor = true;
+            btnCancel.UseVisualStyleBackColor = false;
             btnCancel.Click += btnCancel_Click;
             
             // StudentSkillsForm
@@ -287,7 +288,7 @@ namespace JobFairManagementSystem
             Controls.Add(lblTitle);
             Name = "StudentSkillsForm";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "CareerConnect - Skills & Certifications";
+            Text = "Skills & Certifications";
             panel1.ResumeLayout(false);
             tabSkillsCerts.ResumeLayout(false);
             tabSkills.ResumeLayout(false);
