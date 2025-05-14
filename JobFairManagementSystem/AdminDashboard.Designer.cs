@@ -410,7 +410,16 @@ namespace JobFairManagementSystem
             this.cmbReportType.Items.AddRange(new object[] {
             "Department-wise Registration",
             "GPA Distribution",
-            "Top Skills"});
+            "Top Skills",
+            "Interviews by Company",
+            "Offer Acceptance Ratios",
+            "Recruiter Ratings",
+            "Overall Placement Statistics",
+            "Placement Rates by Department",
+            "Average Salary by Program",
+            "Booth Traffic Analysis",
+            "Peak Participation Hours",
+            "Resource Usage Metrics"});
             this.cmbReportType.Location = new System.Drawing.Point(20, 60);
             this.cmbReportType.Name = "cmbReportType";
             this.cmbReportType.Size = new System.Drawing.Size(250, 28);

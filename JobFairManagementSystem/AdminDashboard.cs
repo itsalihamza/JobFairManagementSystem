@@ -1038,6 +1038,493 @@ namespace JobFairManagementSystem
                             }
                         }
                         
+                        reportContent.AppendLine();
+                        
+                        // Interviews by Company section
+                        reportContent.AppendLine("INTERVIEWS BY COMPANY");
+                        reportContent.AppendLine("----------------------");
+                        reportContent.AppendLine("Company,Total Interviews,Percentage");
+                        
+                        string interviewsQuery = @"
+                            SELECT 
+                                c.CompanyName,
+                                COUNT(i.InterviewID) AS InterviewCount
+                            FROM Companies c
+                            JOIN Recruiters r ON c.CompanyID = r.CompanyID
+                            JOIN JobPostings jp ON c.CompanyID = jp.CompanyID
+                            JOIN Applications a ON jp.JobID = a.JobID
+                            JOIN Interviews i ON a.ApplicationID = i.ApplicationID
+                            GROUP BY c.CompanyName
+                            ORDER BY InterviewCount DESC";
+                        
+                        int totalInterviews = 0;
+                        string totalInterviewsQuery = "SELECT COUNT(*) FROM Interviews";
+                        
+                        using (SqlCommand totCommand = new SqlCommand(totalInterviewsQuery, connection))
+                        {
+                            var result = totCommand.ExecuteScalar();
+                            if (result != null && result != DBNull.Value)
+                            {
+                                totalInterviews = Convert.ToInt32(result);
+                            }
+                        }
+                        
+                        using (SqlCommand command = new SqlCommand(interviewsQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    string company = reader["CompanyName"].ToString();
+                                    int count = Convert.ToInt32(reader["InterviewCount"]);
+                                    double percentage = totalInterviews > 0 ? (double)count / totalInterviews * 100 : 0;
+                                    
+                                    reportContent.AppendLine(
+                                        $"{company},{count},{percentage:F1}%");
+                                }
+                            }
+                        }
+                        
+                        reportContent.AppendLine();
+                        
+                        // Offer Acceptance Ratios section
+                        reportContent.AppendLine("OFFER ACCEPTANCE RATIOS");
+                        reportContent.AppendLine("-----------------------");
+                        reportContent.AppendLine("Company,Applications,Offers,Accepted,Acceptance Rate");
+                        
+                        string offerQuery = @"
+                            WITH ApplicationStats AS (
+                                SELECT 
+                                    c.CompanyName,
+                                    COUNT(a.ApplicationID) AS TotalApplications,
+                                    SUM(CASE WHEN a.ApplicationStatus = 'Offered' OR a.ApplicationStatus = 'Accepted' THEN 1 ELSE 0 END) AS OfferedCount,
+                                    SUM(CASE WHEN a.ApplicationStatus = 'Accepted' THEN 1 ELSE 0 END) AS AcceptedCount
+                                FROM Companies c
+                                JOIN JobPostings jp ON c.CompanyID = jp.CompanyID
+                                JOIN Applications a ON jp.JobID = a.JobID
+                                GROUP BY c.CompanyName
+                            )
+                            SELECT 
+                                CompanyName,
+                                TotalApplications,
+                                OfferedCount,
+                                AcceptedCount,
+                                CASE 
+                                    WHEN OfferedCount > 0 THEN CAST((AcceptedCount * 100.0) / OfferedCount AS DECIMAL(5,1))
+                                    ELSE 0
+                                END AS AcceptanceRate
+                            FROM ApplicationStats
+                            ORDER BY AcceptanceRate DESC";
+                        
+                        using (SqlCommand command = new SqlCommand(offerQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    reportContent.AppendLine(
+                                        $"{reader["CompanyName"]},{reader["TotalApplications"]},{reader["OfferedCount"]},{reader["AcceptedCount"]},{reader["AcceptanceRate"]}%");
+                                }
+                            }
+                        }
+                        
+                        reportContent.AppendLine();
+                        
+                        // Recruiter Ratings section
+                        reportContent.AppendLine("RECRUITER RATINGS");
+                        reportContent.AppendLine("-----------------");
+                        reportContent.AppendLine("Company,Recruiter,Average Rating,Review Count");
+                        
+                        string ratingsQuery = @"
+                            SELECT 
+                                c.CompanyName,
+                                u.FullName AS RecruiterName,
+                                AVG(CAST(r.Rating AS DECIMAL(3,2))) AS AverageRating,
+                                COUNT(r.ReviewID) AS ReviewCount
+                            FROM Reviews r
+                            JOIN Recruiters rec ON r.RecruiterID = rec.RecruiterID
+                            JOIN Users u ON rec.UserID = u.UserID
+                            JOIN Companies c ON rec.CompanyID = c.CompanyID
+                            GROUP BY c.CompanyName, u.FullName
+                            ORDER BY AverageRating DESC";
+                        
+                        using (SqlCommand command = new SqlCommand(ratingsQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    reportContent.AppendLine(
+                                        $"{reader["CompanyName"]},{reader["RecruiterName"]},{reader["AverageRating"]:F2},{reader["ReviewCount"]}");
+                                }
+                            }
+                        }
+                        
+                        reportContent.AppendLine();
+                        
+                        // Placement Statistics section
+                        reportContent.AppendLine("OVERALL PLACEMENT STATISTICS");
+                        reportContent.AppendLine("---------------------------");
+                        reportContent.AppendLine("Metric,Value,Percentage");
+                        
+                        string placementQuery = @"
+                            SELECT 
+                                COUNT(DISTINCT s.StudentID) AS TotalStudents,
+                                COUNT(DISTINCT bv.StudentID) AS ParticipatedStudents,
+                                SUM(CASE WHEN a.ApplicationStatus = 'Accepted' THEN 1 ELSE 0 END) AS HiredStudents
+                            FROM Students s
+                            LEFT JOIN BoothVisits bv ON s.StudentID = bv.StudentID
+                            LEFT JOIN Applications a ON s.StudentID = a.StudentID";
+                            
+                        using (SqlCommand command = new SqlCommand(placementQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                if (reader.Read())
+                                {
+                                    int totalStudents = Convert.ToInt32(reader["TotalStudents"]);
+                                    int participatedStudents = Convert.ToInt32(reader["ParticipatedStudents"]);
+                                    int hiredStudents = Convert.ToInt32(reader["HiredStudents"]);
+                                    
+                                    double participationRate = totalStudents > 0 ? (double)participatedStudents / totalStudents * 100 : 0;
+                                    double placementRate = participatedStudents > 0 ? (double)hiredStudents / participatedStudents * 100 : 0;
+                                    double overallRate = totalStudents > 0 ? (double)hiredStudents / totalStudents * 100 : 0;
+                                    
+                                    reportContent.AppendLine($"Total Registered Students,{totalStudents},100%");
+                                    reportContent.AppendLine($"Students Who Participated in Job Fairs,{participatedStudents},{participationRate:F1}% of total");
+                                    reportContent.AppendLine($"Students Who Accepted Job Offers,{hiredStudents},{placementRate:F1}% of participants");
+                                    reportContent.AppendLine($"Overall Placement Rate,{hiredStudents},{overallRate:F1}% of total");
+                                }
+                            }
+                        }
+                        
+                        reportContent.AppendLine();
+                        
+                        // Placement Rates by Department section
+                        reportContent.AppendLine("PLACEMENT RATES BY DEPARTMENT");
+                        reportContent.AppendLine("----------------------------");
+                        reportContent.AppendLine("Degree Program,Total Students,Participants,Placed,Placement Rate");
+                        
+                        string deptPlacementQuery = @"
+                            WITH DepartmentStats AS (
+                                SELECT 
+                                    s.DegreeProgram,
+                                    COUNT(DISTINCT s.StudentID) AS TotalStudents,
+                                    COUNT(DISTINCT bv.StudentID) AS ParticipatedStudents,
+                                    SUM(CASE WHEN a.ApplicationStatus = 'Accepted' THEN 1 ELSE 0 END) AS HiredStudents
+                                FROM Students s
+                                LEFT JOIN BoothVisits bv ON s.StudentID = bv.StudentID
+                                LEFT JOIN Applications a ON s.StudentID = a.StudentID
+                                GROUP BY s.DegreeProgram
+                            )
+                            SELECT 
+                                DegreeProgram,
+                                TotalStudents,
+                                ParticipatedStudents,
+                                HiredStudents,
+                                CASE 
+                                    WHEN ParticipatedStudents > 0 THEN CAST((HiredStudents * 100.0) / ParticipatedStudents AS DECIMAL(5,1))
+                                    ELSE 0 
+                                END AS PlacementRate
+                            FROM DepartmentStats
+                            ORDER BY PlacementRate DESC";
+                        
+                        using (SqlCommand command = new SqlCommand(deptPlacementQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                int totalStudents = 0;
+                                int totalParticipants = 0;
+                                int totalPlaced = 0;
+                                
+                                while (reader.Read())
+                                {
+                                    string dept = reader["DegreeProgram"].ToString();
+                                    int students = Convert.ToInt32(reader["TotalStudents"]);
+                                    int participants = Convert.ToInt32(reader["ParticipatedStudents"]);
+                                    int placed = Convert.ToInt32(reader["HiredStudents"]);
+                                    decimal rate = Convert.ToDecimal(reader["PlacementRate"]);
+                                    
+                                    totalStudents += students;
+                                    totalParticipants += participants;
+                                    totalPlaced += placed;
+                                    
+                                    reportContent.AppendLine($"{dept},{students},{participants},{placed},{rate}%");
+                                }
+                                
+                                // Add overall summary
+                                if (totalParticipants > 0)
+                                {
+                                    decimal overallRate = Math.Round((decimal)totalPlaced / totalParticipants * 100, 1);
+                                    reportContent.AppendLine($"OVERALL,{totalStudents},{totalParticipants},{totalPlaced},{overallRate}%");
+                                }
+                            }
+                        }
+                        
+                        reportContent.AppendLine();
+                        
+                        // Average Salary by Program section
+                        reportContent.AppendLine("AVERAGE SALARY BY PROGRAM");
+                        reportContent.AppendLine("------------------------");
+                        reportContent.AppendLine("Degree Program,Students Placed,Most Common Salary Range");
+                        
+                        string salaryQuery = @"
+                            WITH SalaryStats AS (
+                                SELECT 
+                                    s.DegreeProgram,
+                                    COUNT(DISTINCT a.StudentID) AS PlacedStudents,
+                                    jp.SalaryRange,
+                                    COUNT(jp.SalaryRange) AS RangeCount
+                                FROM Students s
+                                JOIN Applications a ON s.StudentID = a.StudentID AND a.ApplicationStatus = 'Accepted'
+                                JOIN JobPostings jp ON a.JobID = jp.JobID
+                                GROUP BY s.DegreeProgram, jp.SalaryRange
+                            ),
+                            RankedSalaries AS (
+                                SELECT 
+                                    DegreeProgram,
+                                    SalaryRange,
+                                    RangeCount,
+                                    ROW_NUMBER() OVER (PARTITION BY DegreeProgram ORDER BY RangeCount DESC) as RankNum
+                                FROM SalaryStats
+                            )
+                            SELECT 
+                                rs.DegreeProgram,
+                                SUM(ss.PlacedStudents) AS TotalPlaced,
+                                rs.SalaryRange AS MostCommonRange
+                            FROM RankedSalaries rs
+                            JOIN SalaryStats ss ON rs.DegreeProgram = ss.DegreeProgram AND rs.SalaryRange = ss.SalaryRange
+                            WHERE rs.RankNum = 1
+                            GROUP BY rs.DegreeProgram, rs.SalaryRange
+                            ORDER BY TotalPlaced DESC";
+                        
+                        using (SqlCommand command = new SqlCommand(salaryQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    string dept = reader["DegreeProgram"].ToString();
+                                    int placed = Convert.ToInt32(reader["TotalPlaced"]);
+                                    string mostCommon = reader["MostCommonRange"].ToString();
+                                    
+                                    reportContent.AppendLine($"{dept},{placed},{mostCommon}");
+                                }
+                            }
+                        }
+                        
+                        reportContent.AppendLine();
+                        
+                        // Booth Traffic Analysis section
+                        reportContent.AppendLine("BOOTH TRAFFIC ANALYSIS");
+                        reportContent.AppendLine("----------------------");
+                        reportContent.AppendLine("Company,Booth Number,Total Visits,Unique Students,Avg. Time (min)");
+                        
+                        string boothTrafficQuery = @"
+                            WITH BoothStats AS (
+                                SELECT 
+                                    c.CompanyName,
+                                    bv.BoothNumber,
+                                    COUNT(bv.VisitID) AS TotalVisits,
+                                    COUNT(DISTINCT bv.StudentID) AS UniqueStudents,
+                                    AVG(DATEDIFF(MINUTE, bv.CheckInTime, DATEADD(MINUTE, 15, bv.CheckInTime))) AS AvgTimeSpent
+                                FROM BoothVisits bv
+                                JOIN Companies c ON bv.CompanyID = c.CompanyID
+                                WHERE bv.CheckInTime IS NOT NULL
+                                GROUP BY c.CompanyName, bv.BoothNumber
+                            )
+                            SELECT *
+                            FROM BoothStats
+                            ORDER BY TotalVisits DESC";
+                        
+                        using (SqlCommand command = new SqlCommand(boothTrafficQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                bool hasData = false;
+                                
+                                while (reader.Read())
+                                {
+                                    hasData = true;
+                                    string company = reader["CompanyName"].ToString();
+                                    string boothNumber = reader["BoothNumber"].ToString();
+                                    int visits = Convert.ToInt32(reader["TotalVisits"]);
+                                    int uniqueStudents = Convert.ToInt32(reader["UniqueStudents"]);
+                                    decimal avgTime = Math.Round(Convert.ToDecimal(reader["AvgTimeSpent"]), 1);
+                                    
+                                    reportContent.AppendLine($"{company},{boothNumber},{visits},{uniqueStudents},{avgTime}");
+                                }
+                                
+                                if (!hasData)
+                                {
+                                    reportContent.AppendLine("No booth traffic data available");
+                                }
+                            }
+                        }
+                        
+                        reportContent.AppendLine();
+                        
+                        // Peak Participation Hours section
+                        reportContent.AppendLine("PEAK PARTICIPATION HOURS");
+                        reportContent.AppendLine("------------------------");
+                        reportContent.AppendLine("Hour of Day,Total Check-ins,Percentage,Booth Visits,General Check-ins");
+                        
+                        string peakHoursQuery = @"
+                            WITH HourlyStats AS (
+                                SELECT 
+                                    DATEPART(HOUR, CheckInTime) AS HourOfDay,
+                                    COUNT(*) AS TotalCheckins,
+                                    SUM(CASE WHEN CompanyID IS NOT NULL THEN 1 ELSE 0 END) AS BoothVisits,
+                                    SUM(CASE WHEN CompanyID IS NULL THEN 1 ELSE 0 END) AS GeneralCheckins
+                                FROM BoothVisits
+                                WHERE CheckInTime IS NOT NULL
+                                GROUP BY DATEPART(HOUR, CheckInTime)
+                            )
+                            SELECT 
+                                HourOfDay,
+                                TotalCheckins,
+                                BoothVisits,
+                                GeneralCheckins,
+                                CAST(TotalCheckins * 100.0 / (SELECT SUM(TotalCheckins) FROM HourlyStats) AS DECIMAL(5,1)) AS CheckinPercentage
+                            FROM HourlyStats
+                            ORDER BY TotalCheckins DESC";
+                        
+                        using (SqlCommand command = new SqlCommand(peakHoursQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                bool hasData = false;
+                                
+                                while (reader.Read())
+                                {
+                                    hasData = true;
+                                    int hour = Convert.ToInt32(reader["HourOfDay"]);
+                                    int checkins = Convert.ToInt32(reader["TotalCheckins"]);
+                                    int boothVisits = Convert.ToInt32(reader["BoothVisits"]);
+                                    int generalCheckins = Convert.ToInt32(reader["GeneralCheckins"]);
+                                    decimal percentage = Convert.ToDecimal(reader["CheckinPercentage"]);
+                                    
+                                    // Format the hour as a time range (e.g., "9:00 - 10:00")
+                                    string hourDisplay = $"{hour:D2}:00 - {(hour + 1) % 24:D2}:00";
+                                    
+                                    reportContent.AppendLine($"{hourDisplay},{checkins},{percentage}%,{boothVisits},{generalCheckins}");
+                                }
+                                
+                                if (!hasData)
+                                {
+                                    reportContent.AppendLine("No check-in data available");
+                                }
+                            }
+                        }
+                        
+                        reportContent.AppendLine();
+                        
+                        // Resource Usage Metrics section
+                        reportContent.AppendLine("RESOURCE USAGE METRICS");
+                        reportContent.AppendLine("----------------------");
+                        reportContent.AppendLine("Resource Type,Total Allocated,Used,Utilization Rate,Details");
+                        
+                        // First, add booth space utilization
+                        string boothSpaceQuery = @"
+                            SELECT 
+                                COUNT(DISTINCT bv.BoothNumber) AS AllocatedBooths,
+                                COUNT(DISTINCT CASE WHEN bv.CheckInTime IS NOT NULL THEN bv.BoothNumber END) AS UsedBooths,
+                                CASE 
+                                    WHEN COUNT(DISTINCT bv.BoothNumber) > 0 
+                                    THEN CAST(COUNT(DISTINCT CASE WHEN bv.CheckInTime IS NOT NULL THEN bv.BoothNumber END) * 100.0 / 
+                                         COUNT(DISTINCT bv.BoothNumber) AS DECIMAL(5,1))
+                                    ELSE 0
+                                END AS UtilizationRate
+                            FROM BoothVisits bv
+                            WHERE bv.BoothNumber IS NOT NULL";
+                        
+                        using (SqlCommand command = new SqlCommand(boothSpaceQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                if (reader.Read())
+                                {
+                                    int allocatedBooths = Convert.ToInt32(reader["AllocatedBooths"]);
+                                    int usedBooths = Convert.ToInt32(reader["UsedBooths"]);
+                                    decimal utilizationRate = Convert.ToDecimal(reader["UtilizationRate"]);
+                                    
+                                    reportContent.AppendLine($"Booth Space,{allocatedBooths},{usedBooths},{utilizationRate}%,{usedBooths} of {allocatedBooths} booths had visitor activity");
+                                }
+                            }
+                        }
+                        
+                        // Then add coordinator allocation
+                        string coordinatorQuery = @"
+                            WITH CoordinatorStats AS (
+                                SELECT 
+                                    COUNT(DISTINCT CoordinatorID) AS TotalCoordinators,
+                                    COUNT(DISTINCT CASE WHEN AssignedFairID IS NOT NULL THEN CoordinatorID END) AS AssignedCoordinators
+                                FROM BoothCoordinators
+                            )
+                            SELECT 
+                                TotalCoordinators,
+                                AssignedCoordinators,
+                                CASE 
+                                    WHEN TotalCoordinators > 0 
+                                    THEN CAST(AssignedCoordinators * 100.0 / TotalCoordinators AS DECIMAL(5,1))
+                                    ELSE 0
+                                END AS UtilizationRate
+                            FROM CoordinatorStats";
+                        
+                        using (SqlCommand command = new SqlCommand(coordinatorQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                if (reader.Read())
+                                {
+                                    int totalCoordinators = Convert.ToInt32(reader["TotalCoordinators"]);
+                                    int assignedCoordinators = Convert.ToInt32(reader["AssignedCoordinators"]);
+                                    decimal utilizationRate = Convert.ToDecimal(reader["UtilizationRate"]);
+                                    
+                                    reportContent.AppendLine($"Coordinator Time,{totalCoordinators},{assignedCoordinators},{utilizationRate}%,{assignedCoordinators} of {totalCoordinators} coordinators assigned to fairs");
+                                }
+                            }
+                        }
+                        
+                        // Finally, add timeslot usage data
+                        string timeSlotQuery = @"
+                            SELECT 
+                                jf.EventTitle,
+                                DATEDIFF(HOUR, jf.StartTime, jf.EndTime) AS TotalHours,
+                                COUNT(DISTINCT DATEPART(HOUR, bv.CheckInTime)) AS ActiveHours,
+                                CASE 
+                                    WHEN DATEDIFF(HOUR, jf.StartTime, jf.EndTime) > 0 
+                                    THEN CAST(COUNT(DISTINCT DATEPART(HOUR, bv.CheckInTime)) * 100.0 / 
+                                         DATEDIFF(HOUR, jf.StartTime, jf.EndTime) AS DECIMAL(5,1))
+                                    ELSE 0
+                                END AS TimeUtilization
+                            FROM JobFairEvents jf
+                            LEFT JOIN BoothVisits bv ON jf.JobFairID = bv.JobFairID AND bv.CheckInTime IS NOT NULL
+                            GROUP BY jf.EventTitle, jf.StartTime, jf.EndTime";
+                        
+                        using (SqlCommand command = new SqlCommand(timeSlotQuery, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                bool hasData = false;
+                                while (reader.Read())
+                                {
+                                    hasData = true;
+                                    string eventTitle = reader["EventTitle"].ToString();
+                                    int totalHours = Convert.ToInt32(reader["TotalHours"]);
+                                    int activeHours = Convert.ToInt32(reader["ActiveHours"]);
+                                    decimal utilization = Convert.ToDecimal(reader["TimeUtilization"]);
+                                    
+                                    reportContent.AppendLine($"Time Slots,{totalHours},{activeHours},{utilization}%,{activeHours} of {totalHours} hours had activity for {eventTitle}");
+                                }
+                                
+                                if (!hasData)
+                                {
+                                    reportContent.AppendLine("Time Slots,N/A,N/A,N/A,No time slot data available");
+                                }
+                            }
+                        }
+                        
                         // Write the report content to the file
                         System.IO.File.WriteAllText(saveDialog.FileName, reportContent.ToString());
                         
@@ -1268,6 +1755,728 @@ namespace JobFairManagementSystem
                                     lblSummary.Text = "Skills distribution among registered students";
                                 }
                             }
+                            break;
+                            
+                        case "Interviews by Company":
+                            listView.Columns.Add("Company", 250);
+                            listView.Columns.Add("Total Interviews", 120);
+                            listView.Columns.Add("% of All Interviews", 150);
+                            
+                            string interviewsQuery = @"
+                                SELECT 
+                                    c.CompanyName,
+                                    COUNT(i.InterviewID) AS InterviewCount
+                                FROM Companies c
+                                JOIN Recruiters r ON c.CompanyID = r.CompanyID
+                                JOIN JobPostings jp ON c.CompanyID = jp.CompanyID
+                                JOIN Applications a ON jp.JobID = a.JobID
+                                JOIN Interviews i ON a.ApplicationID = i.ApplicationID
+                                GROUP BY c.CompanyName
+                                ORDER BY InterviewCount DESC";
+                            
+                            // Get total interviews count
+                            string totalInterviewsQuery = "SELECT COUNT(*) FROM Interviews";
+                            int totalInterviews = 0;
+                            
+                            using (SqlCommand totCommand = new SqlCommand(totalInterviewsQuery, connection))
+                            {
+                                var result = totCommand.ExecuteScalar();
+                                if (result != null && result != DBNull.Value)
+                                {
+                                    totalInterviews = Convert.ToInt32(result);
+                                }
+                            }
+                            
+                            using (SqlCommand command = new SqlCommand(interviewsQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    bool hasData = false;
+                                    while (reader.Read())
+                                    {
+                                        hasData = true;
+                                        string company = reader["CompanyName"].ToString();
+                                        int count = Convert.ToInt32(reader["InterviewCount"]);
+                                        double percentage = totalInterviews > 0 ? (double)count / totalInterviews * 100 : 0;
+                                        
+                                        ListViewItem item = new ListViewItem(company);
+                                        item.SubItems.Add(count.ToString());
+                                        item.SubItems.Add($"{percentage:F1}%");
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    if (!hasData)
+                                    {
+                                        ListViewItem item = new ListViewItem("No interview data available");
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    lblSummary.Text = $"Total interviews conducted: {totalInterviews}";
+                                }
+                            }
+                            break;
+                            
+                        case "Offer Acceptance Ratios":
+                            listView.Columns.Add("Company", 250);
+                            listView.Columns.Add("Applications", 100);
+                            listView.Columns.Add("Offers", 80);
+                            listView.Columns.Add("Accepted", 80);
+                            listView.Columns.Add("Acceptance Rate", 120);
+                            
+                            string offerQuery = @"
+                                WITH ApplicationStats AS (
+                                    SELECT 
+                                        c.CompanyName,
+                                        COUNT(a.ApplicationID) AS TotalApplications,
+                                        SUM(CASE WHEN a.ApplicationStatus = 'Offered' OR a.ApplicationStatus = 'Accepted' THEN 1 ELSE 0 END) AS OfferedCount,
+                                        SUM(CASE WHEN a.ApplicationStatus = 'Accepted' THEN 1 ELSE 0 END) AS AcceptedCount
+                                    FROM Companies c
+                                    JOIN JobPostings jp ON c.CompanyID = jp.CompanyID
+                                    JOIN Applications a ON jp.JobID = a.JobID
+                                    GROUP BY c.CompanyName
+                                )
+                                SELECT 
+                                    CompanyName,
+                                    TotalApplications,
+                                    OfferedCount,
+                                    AcceptedCount,
+                                    CASE 
+                                        WHEN OfferedCount > 0 THEN CAST((AcceptedCount * 100.0) / OfferedCount AS DECIMAL(5,1))
+                                        ELSE 0
+                                    END AS AcceptanceRate
+                                FROM ApplicationStats
+                                ORDER BY AcceptanceRate DESC";
+                            
+                            using (SqlCommand command = new SqlCommand(offerQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    bool hasData = false;
+                                    int totalApplications = 0;
+                                    int totalOffers = 0;
+                                    int totalAccepted = 0;
+                                    
+                                    while (reader.Read())
+                                    {
+                                        hasData = true;
+                                        string company = reader["CompanyName"].ToString();
+                                        int applications = Convert.ToInt32(reader["TotalApplications"]);
+                                        int offers = Convert.ToInt32(reader["OfferedCount"]);
+                                        int accepted = Convert.ToInt32(reader["AcceptedCount"]);
+                                        decimal rate = Convert.ToDecimal(reader["AcceptanceRate"]);
+                                        
+                                        totalApplications += applications;
+                                        totalOffers += offers;
+                                        totalAccepted += accepted;
+                                        
+                                        ListViewItem item = new ListViewItem(company);
+                                        item.SubItems.Add(applications.ToString());
+                                        item.SubItems.Add(offers.ToString());
+                                        item.SubItems.Add(accepted.ToString());
+                                        item.SubItems.Add($"{rate}%");
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    if (!hasData)
+                                    {
+                                        ListViewItem item = new ListViewItem("No application data available");
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    decimal overallRate = totalOffers > 0 ? Math.Round((decimal)totalAccepted / totalOffers * 100, 1) : 0;
+                                    lblSummary.Text = $"Overall acceptance rate: {overallRate}% ({totalAccepted} accepted out of {totalOffers} offers)";
+                                }
+                            }
+                            break;
+                            
+                        case "Recruiter Ratings":
+                            listView.Columns.Add("Company", 200);
+                            listView.Columns.Add("Recruiter Name", 150);
+                            listView.Columns.Add("Avg. Rating", 100);
+                            listView.Columns.Add("Total Reviews", 100);
+                            
+                            string ratingsQuery = @"
+                                SELECT 
+                                    c.CompanyName,
+                                    u.FullName AS RecruiterName,
+                                    AVG(CAST(r.Rating AS DECIMAL(3,2))) AS AverageRating,
+                                    COUNT(r.ReviewID) AS ReviewCount
+                                FROM Reviews r
+                                JOIN Recruiters rec ON r.RecruiterID = rec.RecruiterID
+                                JOIN Users u ON rec.UserID = u.UserID
+                                JOIN Companies c ON rec.CompanyID = c.CompanyID
+                                GROUP BY c.CompanyName, u.FullName
+                                ORDER BY AverageRating DESC";
+                            
+                            using (SqlCommand command = new SqlCommand(ratingsQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    bool hasData = false;
+                                    int totalReviews = 0;
+                                    decimal weightedRatingSum = 0;
+                                    
+                                    while (reader.Read())
+                                    {
+                                        hasData = true;
+                                        string company = reader["CompanyName"].ToString();
+                                        string recruiter = reader["RecruiterName"].ToString();
+                                        decimal avgRating = Convert.ToDecimal(reader["AverageRating"]);
+                                        int reviewCount = Convert.ToInt32(reader["ReviewCount"]);
+                                        
+                                        totalReviews += reviewCount;
+                                        weightedRatingSum += avgRating * reviewCount;
+                                        
+                                        ListViewItem item = new ListViewItem(company);
+                                        item.SubItems.Add(recruiter);
+                                        item.SubItems.Add($"{avgRating:F2}");
+                                        item.SubItems.Add(reviewCount.ToString());
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    if (!hasData)
+                                    {
+                                        ListViewItem item = new ListViewItem("No ratings data available");
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    decimal overallRating = totalReviews > 0 ? Math.Round(weightedRatingSum / totalReviews, 2) : 0;
+                                    lblSummary.Text = $"Overall recruiter rating: {overallRating:F2} (based on {totalReviews} reviews)";
+                                }
+                            }
+                            break;
+                            
+                        case "Overall Placement Statistics":
+                            listView.Columns.Add("Metric", 300);
+                            listView.Columns.Add("Value", 150);
+                            listView.Columns.Add("Percentage", 150);
+                            
+                            // Get total student data
+                            string placementQuery = @"
+                                SELECT 
+                                    COUNT(DISTINCT s.StudentID) AS TotalStudents,
+                                    COUNT(DISTINCT bv.StudentID) AS ParticipatedStudents,
+                                    SUM(CASE WHEN a.ApplicationStatus = 'Accepted' THEN 1 ELSE 0 END) AS HiredStudents
+                                FROM Students s
+                                LEFT JOIN BoothVisits bv ON s.StudentID = bv.StudentID
+                                LEFT JOIN Applications a ON s.StudentID = a.StudentID";
+                            
+                            using (SqlCommand command = new SqlCommand(placementQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    if (reader.Read())
+                                    {
+                                        int totalStudents = Convert.ToInt32(reader["TotalStudents"]);
+                                        int participatedStudents = Convert.ToInt32(reader["ParticipatedStudents"]);
+                                        int hiredStudents = Convert.ToInt32(reader["HiredStudents"]);
+                                        
+                                        double participationRate = totalStudents > 0 ? (double)participatedStudents / totalStudents * 100 : 0;
+                                        double placementRate = participatedStudents > 0 ? (double)hiredStudents / participatedStudents * 100 : 0;
+                                        double overallRate = totalStudents > 0 ? (double)hiredStudents / totalStudents * 100 : 0;
+                                        
+                                        // Total students
+                                        ListViewItem item1 = new ListViewItem("Total Registered Students");
+                                        item1.SubItems.Add(totalStudents.ToString());
+                                        item1.SubItems.Add("100%");
+                                        listView.Items.Add(item1);
+                                        
+                                        // Participated students
+                                        ListViewItem item2 = new ListViewItem("Students Who Participated in Job Fairs");
+                                        item2.SubItems.Add(participatedStudents.ToString());
+                                        item2.SubItems.Add($"{participationRate:F1}% of total");
+                                        listView.Items.Add(item2);
+                                        
+                                        // Hired students
+                                        ListViewItem item3 = new ListViewItem("Students Who Accepted Job Offers");
+                                        item3.SubItems.Add(hiredStudents.ToString());
+                                        item3.SubItems.Add($"{placementRate:F1}% of participants");
+                                        listView.Items.Add(item3);
+                                        
+                                        // Overall placement rate
+                                        ListViewItem item4 = new ListViewItem("Overall Placement Rate");
+                                        item4.SubItems.Add(hiredStudents.ToString());
+                                        item4.SubItems.Add($"{overallRate:F1}% of total");
+                                        listView.Items.Add(item4);
+                                        
+                                        lblSummary.Text = $"Overall placement rate: {placementRate:F1}% ({hiredStudents} hired out of {participatedStudents} participants)";
+                                    }
+                                    else
+                                    {
+                                        ListViewItem item = new ListViewItem("No placement data available");
+                                        listView.Items.Add(item);
+                                    }
+                                }
+                            }
+                            break;
+                            
+                        case "Placement Rates by Department":
+                            listView.Columns.Add("Degree Program", 150);
+                            listView.Columns.Add("Total Students", 120);
+                            listView.Columns.Add("Participants", 120);
+                            listView.Columns.Add("Placed", 80);
+                            listView.Columns.Add("Placement Rate", 150);
+                            
+                            string deptPlacementQuery = @"
+                                WITH DepartmentStats AS (
+                                    SELECT 
+                                        s.DegreeProgram,
+                                        COUNT(DISTINCT s.StudentID) AS TotalStudents,
+                                        COUNT(DISTINCT bv.StudentID) AS ParticipatedStudents,
+                                        SUM(CASE WHEN a.ApplicationStatus = 'Accepted' THEN 1 ELSE 0 END) AS HiredStudents
+                                    FROM Students s
+                                    LEFT JOIN BoothVisits bv ON s.StudentID = bv.StudentID
+                                    LEFT JOIN Applications a ON s.StudentID = a.StudentID
+                                    GROUP BY s.DegreeProgram
+                                )
+                                SELECT 
+                                    DegreeProgram,
+                                    TotalStudents,
+                                    ParticipatedStudents,
+                                    HiredStudents,
+                                    CASE 
+                                        WHEN ParticipatedStudents > 0 THEN CAST((HiredStudents * 100.0) / ParticipatedStudents AS DECIMAL(5,1))
+                                        ELSE 0 
+                                    END AS PlacementRate
+                                FROM DepartmentStats
+                                ORDER BY PlacementRate DESC";
+                            
+                            using (SqlCommand command = new SqlCommand(deptPlacementQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    bool hasData = false;
+                                    int totalStudents = 0;
+                                    int totalParticipants = 0;
+                                    int totalPlaced = 0;
+                                    
+                                    while (reader.Read())
+                                    {
+                                        hasData = true;
+                                        string dept = reader["DegreeProgram"].ToString();
+                                        int students = Convert.ToInt32(reader["TotalStudents"]);
+                                        int participants = Convert.ToInt32(reader["ParticipatedStudents"]);
+                                        int placed = Convert.ToInt32(reader["HiredStudents"]);
+                                        decimal rate = Convert.ToDecimal(reader["PlacementRate"]);
+                                        
+                                        totalStudents += students;
+                                        totalParticipants += participants;
+                                        totalPlaced += placed;
+                                        
+                                        ListViewItem item = new ListViewItem(dept);
+                                        item.SubItems.Add(students.ToString());
+                                        item.SubItems.Add(participants.ToString());
+                                        item.SubItems.Add(placed.ToString());
+                                        item.SubItems.Add($"{rate}%");
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    if (!hasData)
+                                    {
+                                        ListViewItem item = new ListViewItem("No placement data available");
+                                        listView.Items.Add(item);
+                                    }
+                                    else
+                                    {
+                                        // Add overall summary row
+                                        decimal overallRate = totalParticipants > 0 ? Math.Round((decimal)totalPlaced / totalParticipants * 100, 1) : 0;
+                                        
+                                        ListViewItem summaryItem = new ListViewItem("OVERALL");
+                                        summaryItem.Font = new Font(listView.Font, FontStyle.Bold);
+                                        summaryItem.SubItems.Add(totalStudents.ToString());
+                                        summaryItem.SubItems.Add(totalParticipants.ToString());
+                                        summaryItem.SubItems.Add(totalPlaced.ToString());
+                                        summaryItem.SubItems.Add($"{overallRate}%");
+                                        listView.Items.Add(summaryItem);
+                                    }
+                                    
+                                    if (totalParticipants > 0)
+                                    {
+                                        decimal averageRate = Math.Round((decimal)totalPlaced / totalParticipants * 100, 1);
+                                        lblSummary.Text = $"Average placement rate across all departments: {averageRate}%";
+                                    }
+                                    else
+                                    {
+                                        lblSummary.Text = "No placement data available";
+                                    }
+                                }
+                            }
+                            break;
+                            
+                        case "Average Salary by Program":
+                            listView.Columns.Add("Degree Program", 150);
+                            listView.Columns.Add("Students Placed", 120);
+                            listView.Columns.Add("Avg. Salary Range", 200);
+                            listView.Columns.Add("Most Common Range", 200);
+                            
+                            string salaryQuery = @"
+                                WITH SalaryStats AS (
+                                    SELECT 
+                                        s.DegreeProgram,
+                                        COUNT(DISTINCT a.StudentID) AS PlacedStudents,
+                                        jp.SalaryRange,
+                                        COUNT(jp.SalaryRange) AS RangeCount
+                                    FROM Students s
+                                    JOIN Applications a ON s.StudentID = a.StudentID AND a.ApplicationStatus = 'Accepted'
+                                    JOIN JobPostings jp ON a.JobID = jp.JobID
+                                    GROUP BY s.DegreeProgram, jp.SalaryRange
+                                ),
+                                RankedSalaries AS (
+                                    SELECT 
+                                        DegreeProgram,
+                                        SalaryRange,
+                                        RangeCount,
+                                        ROW_NUMBER() OVER (PARTITION BY DegreeProgram ORDER BY RangeCount DESC) as RankNum
+                                    FROM SalaryStats
+                                ),
+                                AggregatedStats AS (
+                                    SELECT 
+                                        ss.DegreeProgram,
+                                        SUM(ss.PlacedStudents) AS TotalPlaced,
+                                        STRING_AGG(ss.SalaryRange, ', ') AS AllSalaryRanges,
+                                        (SELECT TOP 1 SalaryRange FROM RankedSalaries rs WHERE rs.DegreeProgram = ss.DegreeProgram AND RankNum = 1) AS MostCommonRange
+                                    FROM SalaryStats ss
+                                    GROUP BY ss.DegreeProgram
+                                )
+                                SELECT *
+                                FROM AggregatedStats
+                                ORDER BY TotalPlaced DESC";
+                            
+                            using (SqlCommand command = new SqlCommand(salaryQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    bool hasData = false;
+                                    int totalStudentsPlaced = 0;
+                                    string commonSalaryRange = "N/A";
+                                    
+                                    while (reader.Read())
+                                    {
+                                        hasData = true;
+                                        string dept = reader["DegreeProgram"].ToString();
+                                        int placed = Convert.ToInt32(reader["TotalPlaced"]);
+                                        string salaryRanges = reader["AllSalaryRanges"].ToString();
+                                        string mostCommonRange = reader["MostCommonRange"].ToString();
+                                        
+                                        totalStudentsPlaced += placed;
+                                        
+                                        // Set the most common range for the very first record (highest placed count)
+                                        if (commonSalaryRange == "N/A")
+                                        {
+                                            commonSalaryRange = mostCommonRange;
+                                        }
+                                        
+                                        ListViewItem item = new ListViewItem(dept);
+                                        item.SubItems.Add(placed.ToString());
+                                        item.SubItems.Add(salaryRanges);
+                                        item.SubItems.Add(mostCommonRange);
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    if (!hasData)
+                                    {
+                                        ListViewItem item = new ListViewItem("No salary data available");
+                                        listView.Items.Add(item);
+                                        lblSummary.Text = "No salary data available for students";
+                                    }
+                                    else
+                                    {
+                                        lblSummary.Text = $"Total students placed: {totalStudentsPlaced}, Most common salary range: {commonSalaryRange}";
+                                    }
+                                }
+                            }
+                            break;
+                            
+                        case "Booth Traffic Analysis":
+                            listView.Columns.Add("Company", 200);
+                            listView.Columns.Add("Booth Number", 120);
+                            listView.Columns.Add("Total Visits", 100);
+                            listView.Columns.Add("Unique Students", 120);
+                            listView.Columns.Add("Avg. Time (min)", 120);
+                            
+                            string boothTrafficQuery = @"
+                                WITH BoothStats AS (
+                                    SELECT 
+                                        c.CompanyName,
+                                        bv.BoothNumber,
+                                        COUNT(bv.VisitID) AS TotalVisits,
+                                        COUNT(DISTINCT bv.StudentID) AS UniqueStudents,
+                                        AVG(DATEDIFF(MINUTE, bv.CheckInTime, DATEADD(MINUTE, 15, bv.CheckInTime))) AS AvgTimeSpent
+                                    FROM BoothVisits bv
+                                    JOIN Companies c ON bv.CompanyID = c.CompanyID
+                                    WHERE bv.CheckInTime IS NOT NULL
+                                    GROUP BY c.CompanyName, bv.BoothNumber
+                                )
+                                SELECT *
+                                FROM BoothStats
+                                ORDER BY TotalVisits DESC";
+                            
+                            using (SqlCommand command = new SqlCommand(boothTrafficQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    bool hasData = false;
+                                    int totalVisits = 0;
+                                    int totalUniqueStudents = 0;
+                                    decimal totalAvgTime = 0;
+                                    int boothCount = 0;
+                                    
+                                    while (reader.Read())
+                                    {
+                                        hasData = true;
+                                        boothCount++;
+                                        
+                                        string company = reader["CompanyName"].ToString();
+                                        string boothNumber = reader["BoothNumber"].ToString();
+                                        int visits = Convert.ToInt32(reader["TotalVisits"]);
+                                        int uniqueStudents = Convert.ToInt32(reader["UniqueStudents"]);
+                                        decimal avgTime = Math.Round(Convert.ToDecimal(reader["AvgTimeSpent"]), 1);
+                                        
+                                        totalVisits += visits;
+                                        totalUniqueStudents += uniqueStudents;
+                                        totalAvgTime += avgTime;
+                                        
+                                        ListViewItem item = new ListViewItem(company);
+                                        item.SubItems.Add(boothNumber);
+                                        item.SubItems.Add(visits.ToString());
+                                        item.SubItems.Add(uniqueStudents.ToString());
+                                        item.SubItems.Add(avgTime.ToString());
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    if (!hasData)
+                                    {
+                                        ListViewItem item = new ListViewItem("No booth traffic data available");
+                                        listView.Items.Add(item);
+                                    }
+                                    else
+                                    {
+                                        decimal systemAvgTime = boothCount > 0 ? Math.Round(totalAvgTime / boothCount, 1) : 0;
+                                        
+                                        // Add summary row
+                                        ListViewItem summaryItem = new ListViewItem("TOTALS");
+                                        summaryItem.Font = new Font(listView.Font, FontStyle.Bold);
+                                        summaryItem.SubItems.Add(boothCount.ToString());
+                                        summaryItem.SubItems.Add(totalVisits.ToString());
+                                        summaryItem.SubItems.Add(totalUniqueStudents.ToString());
+                                        summaryItem.SubItems.Add(systemAvgTime.ToString());
+                                        listView.Items.Add(summaryItem);
+                                        
+                                        lblSummary.Text = $"Total visits across all booths: {totalVisits}, Average time spent per booth: {systemAvgTime} minutes";
+                                    }
+                                }
+                            }
+                            break;
+                            
+                        case "Peak Participation Hours":
+                            listView.Columns.Add("Hour of Day", 120);
+                            listView.Columns.Add("Total Check-ins", 120);
+                            listView.Columns.Add("Percentage", 100);
+                            listView.Columns.Add("Booth Visits", 120);
+                            listView.Columns.Add("General Check-ins", 150);
+                            
+                            string peakHoursQuery = @"
+                                WITH HourlyStats AS (
+                                    SELECT 
+                                        DATEPART(HOUR, CheckInTime) AS HourOfDay,
+                                        COUNT(*) AS TotalCheckins,
+                                        SUM(CASE WHEN CompanyID IS NOT NULL THEN 1 ELSE 0 END) AS BoothVisits,
+                                        SUM(CASE WHEN CompanyID IS NULL THEN 1 ELSE 0 END) AS GeneralCheckins
+                                    FROM BoothVisits
+                                    WHERE CheckInTime IS NOT NULL
+                                    GROUP BY DATEPART(HOUR, CheckInTime)
+                                )
+                                SELECT 
+                                    HourOfDay,
+                                    TotalCheckins,
+                                    BoothVisits,
+                                    GeneralCheckins,
+                                    CAST(TotalCheckins * 100.0 / (SELECT SUM(TotalCheckins) FROM HourlyStats) AS DECIMAL(5,1)) AS CheckinPercentage
+                                FROM HourlyStats
+                                ORDER BY TotalCheckins DESC";
+                            
+                            using (SqlCommand command = new SqlCommand(peakHoursQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    bool hasData = false;
+                                    int totalCheckins = 0;
+                                    int peakHour = 0;
+                                    int peakCount = 0;
+                                    
+                                    while (reader.Read())
+                                    {
+                                        hasData = true;
+                                        int hour = Convert.ToInt32(reader["HourOfDay"]);
+                                        int checkins = Convert.ToInt32(reader["TotalCheckins"]);
+                                        int boothVisits = Convert.ToInt32(reader["BoothVisits"]);
+                                        int generalCheckins = Convert.ToInt32(reader["GeneralCheckins"]);
+                                        decimal percentage = Convert.ToDecimal(reader["CheckinPercentage"]);
+                                        
+                                        // Track peak hour
+                                        if (checkins > peakCount)
+                                        {
+                                            peakHour = hour;
+                                            peakCount = checkins;
+                                        }
+                                        
+                                        totalCheckins += checkins;
+                                        
+                                        // Format the hour as a time range (e.g., "9:00 - 10:00")
+                                        string hourDisplay = $"{hour:D2}:00 - {(hour + 1) % 24:D2}:00";
+                                        
+                                        ListViewItem item = new ListViewItem(hourDisplay);
+                                        item.SubItems.Add(checkins.ToString());
+                                        item.SubItems.Add($"{percentage}%");
+                                        item.SubItems.Add(boothVisits.ToString());
+                                        item.SubItems.Add(generalCheckins.ToString());
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    if (!hasData)
+                                    {
+                                        ListViewItem item = new ListViewItem("No check-in data available");
+                                        listView.Items.Add(item);
+                                    }
+                                    else
+                                    {
+                                        string peakHourDisplay = $"{peakHour:D2}:00 - {(peakHour + 1) % 24:D2}:00";
+                                        lblSummary.Text = $"Peak participation hour: {peakHourDisplay} with {peakCount} check-ins ({(decimal)peakCount / totalCheckins * 100:F1}% of total)";
+                                    }
+                                }
+                            }
+                            break;
+                            
+                        case "Resource Usage Metrics":
+                            listView.Columns.Add("Resource Type", 200);
+                            listView.Columns.Add("Total Allocated", 120);
+                            listView.Columns.Add("Used", 100);
+                            listView.Columns.Add("Utilization Rate", 130);
+                            listView.Columns.Add("Details", 200);
+                            
+                            // First, add booth space utilization
+                            string boothSpaceQuery = @"
+                                SELECT 
+                                    COUNT(DISTINCT bv.BoothNumber) AS AllocatedBooths,
+                                    COUNT(DISTINCT CASE WHEN bv.CheckInTime IS NOT NULL THEN bv.BoothNumber END) AS UsedBooths,
+                                    CASE 
+                                        WHEN COUNT(DISTINCT bv.BoothNumber) > 0 
+                                        THEN CAST(COUNT(DISTINCT CASE WHEN bv.CheckInTime IS NOT NULL THEN bv.BoothNumber END) * 100.0 / 
+                                             COUNT(DISTINCT bv.BoothNumber) AS DECIMAL(5,1))
+                                        ELSE 0
+                                    END AS UtilizationRate
+                                FROM BoothVisits bv
+                                WHERE bv.BoothNumber IS NOT NULL";
+                            
+                            using (SqlCommand command = new SqlCommand(boothSpaceQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    if (reader.Read())
+                                    {
+                                        int allocatedBooths = Convert.ToInt32(reader["AllocatedBooths"]);
+                                        int usedBooths = Convert.ToInt32(reader["UsedBooths"]);
+                                        decimal utilizationRate = Convert.ToDecimal(reader["UtilizationRate"]);
+                                        
+                                        ListViewItem item = new ListViewItem("Booth Space");
+                                        item.SubItems.Add(allocatedBooths.ToString());
+                                        item.SubItems.Add(usedBooths.ToString());
+                                        item.SubItems.Add($"{utilizationRate}%");
+                                        item.SubItems.Add($"{usedBooths} of {allocatedBooths} booths had visitor activity");
+                                        listView.Items.Add(item);
+                                    }
+                                }
+                            }
+                            
+                            // Then add coordinator allocation
+                            string coordinatorQuery = @"
+                                WITH CoordinatorStats AS (
+                                    SELECT 
+                                        COUNT(DISTINCT CoordinatorID) AS TotalCoordinators,
+                                        COUNT(DISTINCT CASE WHEN AssignedFairID IS NOT NULL THEN CoordinatorID END) AS AssignedCoordinators
+                                    FROM BoothCoordinators
+                                )
+                                SELECT 
+                                    TotalCoordinators,
+                                    AssignedCoordinators,
+                                    CASE 
+                                        WHEN TotalCoordinators > 0 
+                                        THEN CAST(AssignedCoordinators * 100.0 / TotalCoordinators AS DECIMAL(5,1))
+                                        ELSE 0
+                                    END AS UtilizationRate
+                                FROM CoordinatorStats";
+                            
+                            using (SqlCommand command = new SqlCommand(coordinatorQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    if (reader.Read())
+                                    {
+                                        int totalCoordinators = Convert.ToInt32(reader["TotalCoordinators"]);
+                                        int assignedCoordinators = Convert.ToInt32(reader["AssignedCoordinators"]);
+                                        decimal utilizationRate = Convert.ToDecimal(reader["UtilizationRate"]);
+                                        
+                                        ListViewItem item = new ListViewItem("Coordinator Time");
+                                        item.SubItems.Add(totalCoordinators.ToString());
+                                        item.SubItems.Add(assignedCoordinators.ToString());
+                                        item.SubItems.Add($"{utilizationRate}%");
+                                        item.SubItems.Add($"{assignedCoordinators} of {totalCoordinators} coordinators assigned to fairs");
+                                        listView.Items.Add(item);
+                                    }
+                                }
+                            }
+                            
+                            // Finally, add timeslot usage data
+                            string timeSlotQuery = @"
+                                SELECT 
+                                    jf.EventTitle,
+                                    DATEDIFF(HOUR, jf.StartTime, jf.EndTime) AS TotalHours,
+                                    COUNT(DISTINCT DATEPART(HOUR, bv.CheckInTime)) AS ActiveHours,
+                                    CASE 
+                                        WHEN DATEDIFF(HOUR, jf.StartTime, jf.EndTime) > 0 
+                                        THEN CAST(COUNT(DISTINCT DATEPART(HOUR, bv.CheckInTime)) * 100.0 / 
+                                             DATEDIFF(HOUR, jf.StartTime, jf.EndTime) AS DECIMAL(5,1))
+                                        ELSE 0
+                                    END AS TimeUtilization
+                                FROM JobFairEvents jf
+                                LEFT JOIN BoothVisits bv ON jf.JobFairID = bv.JobFairID AND bv.CheckInTime IS NOT NULL
+                                GROUP BY jf.EventTitle, jf.StartTime, jf.EndTime";
+                            
+                            using (SqlCommand command = new SqlCommand(timeSlotQuery, connection))
+                            {
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    bool hasData = false;
+                                    while (reader.Read())
+                                    {
+                                        hasData = true;
+                                        string eventTitle = reader["EventTitle"].ToString();
+                                        int totalHours = Convert.ToInt32(reader["TotalHours"]);
+                                        int activeHours = Convert.ToInt32(reader["ActiveHours"]);
+                                        decimal utilization = Convert.ToDecimal(reader["TimeUtilization"]);
+                                        
+                                        ListViewItem item = new ListViewItem("Time Slots");
+                                        item.SubItems.Add(totalHours.ToString());
+                                        item.SubItems.Add(activeHours.ToString());
+                                        item.SubItems.Add($"{utilization}%");
+                                        item.SubItems.Add($"{activeHours} of {totalHours} hours had activity for {eventTitle}");
+                                        listView.Items.Add(item);
+                                    }
+                                    
+                                    if (!hasData)
+                                    {
+                                        ListViewItem item = new ListViewItem("Time Slots");
+                                        item.SubItems.Add("N/A");
+                                        item.SubItems.Add("N/A");
+                                        item.SubItems.Add("N/A");
+                                        item.SubItems.Add("No time slot data available");
+                                        listView.Items.Add(item);
+                                    }
+                                }
+                            }
+                            
+                            // Set summary text
+                            lblSummary.Text = "Resource utilization analysis for job fairs";
                             break;
                     }
                     
