@@ -28,396 +28,417 @@ namespace JobFairManagementSystem
         /// </summary>
         private void InitializeComponent()
         {
-            lblWelcome = new Label();
-            tabControl1 = new TabControl();
-            tabJobFairs = new TabPage();
-            btnManageFair = new Button();
-            btnCreateFair = new Button();
-            dgvJobFairs = new DataGridView();
-            FairId = new DataGridViewTextBoxColumn();
-            FairName = new DataGridViewTextBoxColumn();
-            FairDate = new DataGridViewTextBoxColumn();
-            Venue = new DataGridViewTextBoxColumn();
-            Status = new DataGridViewTextBoxColumn();
-            tabCompanies = new TabPage();
-            btnApproveCompany = new Button();
-            dgvCompanies = new DataGridView();
-            CompanyId = new DataGridViewTextBoxColumn();
-            CompanyName = new DataGridViewTextBoxColumn();
-            Industry = new DataGridViewTextBoxColumn();
-            JobCount = new DataGridViewTextBoxColumn();
-            CompanyStatus = new DataGridViewTextBoxColumn();
-            tabStudents = new TabPage();
-            btnVerifyStudent = new Button();
-            dgvStudents = new DataGridView();
-            StudentId = new DataGridViewTextBoxColumn();
-            StudentName = new DataGridViewTextBoxColumn();
-            FastId = new DataGridViewTextBoxColumn();
-            Degree = new DataGridViewTextBoxColumn();
-            GPA = new DataGridViewTextBoxColumn();
-            StudentStatus = new DataGridViewTextBoxColumn();
-            tabReports = new TabPage();
-            btnGenerateReports = new Button();
-            panel1 = new Panel();
-            btnLogout = new Button();
-            tabControl1.SuspendLayout();
-            tabJobFairs.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dgvJobFairs).BeginInit();
-            tabCompanies.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dgvCompanies).BeginInit();
-            tabStudents.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dgvStudents).BeginInit();
-            tabReports.SuspendLayout();
-            panel1.SuspendLayout();
-            SuspendLayout();
-            
+            this.lblWelcome = new System.Windows.Forms.Label();
+            this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.tabJobFairs = new System.Windows.Forms.TabPage();
+            this.btnManageFair = new System.Windows.Forms.Button();
+            this.btnCreateFair = new System.Windows.Forms.Button();
+            this.dgvJobFairs = new System.Windows.Forms.DataGridView();
+            this.FairId = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.FairName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.FairDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Venue = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Status = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.tabCompanies = new System.Windows.Forms.TabPage();
+            this.btnApproveCompany = new System.Windows.Forms.Button();
+            this.dgvCompanies = new System.Windows.Forms.DataGridView();
+            this.CompanyId = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CompanyName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Industry = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.JobCount = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CompanyStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.tabStudents = new System.Windows.Forms.TabPage();
+            this.btnVerifyStudent = new System.Windows.Forms.Button();
+            this.dgvStudents = new System.Windows.Forms.DataGridView();
+            this.StudentId = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.StudentName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.FastId = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Degree = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.GPA = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.StudentStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.tabReports = new System.Windows.Forms.TabPage();
+            this.btnGenerateReports = new System.Windows.Forms.Button();
+            this.panel1 = new System.Windows.Forms.Panel();
+            this.btnLogout = new System.Windows.Forms.Button();
+            this.tabControl1.SuspendLayout();
+            this.tabJobFairs.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvJobFairs)).BeginInit();
+            this.tabCompanies.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvCompanies)).BeginInit();
+            this.tabStudents.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvStudents)).BeginInit();
+            this.tabReports.SuspendLayout();
+            this.panel1.SuspendLayout();
+            this.SuspendLayout();
+            // 
             // lblWelcome
             // 
-            lblWelcome.AutoSize = true;
-            lblWelcome.Font = new Font("Segoe UI", 14F, FontStyle.Bold, GraphicsUnit.Point);
-            lblWelcome.Location = new Point(30, 20);
-            lblWelcome.Name = "lblWelcome";
-            lblWelcome.Size = new Size(200, 32);
-            lblWelcome.TabIndex = 0;
-            lblWelcome.Text = "Welcome, Admin";
-            
+            this.lblWelcome.AutoSize = true;
+            this.lblWelcome.Font = new System.Drawing.Font("Segoe UI", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.lblWelcome.Location = new System.Drawing.Point(30, 20);
+            this.lblWelcome.Name = "lblWelcome";
+            this.lblWelcome.Size = new System.Drawing.Size(209, 32);
+            this.lblWelcome.TabIndex = 0;
+            this.lblWelcome.Text = "Welcome, Admin";
+            // 
             // tabControl1
             // 
-            tabControl1.Controls.Add(tabJobFairs);
-            tabControl1.Controls.Add(tabCompanies);
-            tabControl1.Controls.Add(tabStudents);
-            tabControl1.Controls.Add(tabReports);
-            tabControl1.Location = new Point(30, 70);
-            tabControl1.Name = "tabControl1";
-            tabControl1.SelectedIndex = 0;
-            tabControl1.Size = new Size(900, 450);
-            tabControl1.TabIndex = 1;
-            tabControl1.SelectedIndexChanged += tabControl1_SelectedIndexChanged;
-            
+            this.tabControl1.Controls.Add(this.tabJobFairs);
+            this.tabControl1.Controls.Add(this.tabCompanies);
+            this.tabControl1.Controls.Add(this.tabStudents);
+            this.tabControl1.Controls.Add(this.tabReports);
+            this.tabControl1.Location = new System.Drawing.Point(30, 70);
+            this.tabControl1.Name = "tabControl1";
+            this.tabControl1.SelectedIndex = 0;
+            this.tabControl1.Size = new System.Drawing.Size(900, 450);
+            this.tabControl1.TabIndex = 1;
+            // 
             // tabJobFairs
             // 
-            tabJobFairs.Controls.Add(btnManageFair);
-            tabJobFairs.Controls.Add(btnCreateFair);
-            tabJobFairs.Controls.Add(dgvJobFairs);
-            tabJobFairs.Location = new Point(4, 29);
-            tabJobFairs.Name = "tabJobFairs";
-            tabJobFairs.Padding = new Padding(3);
-            tabJobFairs.Size = new Size(892, 417);
-            tabJobFairs.TabIndex = 0;
-            tabJobFairs.Text = "Job Fairs";
-            tabJobFairs.UseVisualStyleBackColor = true;
-            
+            this.tabJobFairs.Controls.Add(this.btnManageFair);
+            this.tabJobFairs.Controls.Add(this.btnCreateFair);
+            this.tabJobFairs.Controls.Add(this.dgvJobFairs);
+            this.tabJobFairs.Location = new System.Drawing.Point(4, 29);
+            this.tabJobFairs.Name = "tabJobFairs";
+            this.tabJobFairs.Padding = new System.Windows.Forms.Padding(3);
+            this.tabJobFairs.Size = new System.Drawing.Size(892, 417);
+            this.tabJobFairs.TabIndex = 0;
+            this.tabJobFairs.Text = "Job Fairs";
+            this.tabJobFairs.UseVisualStyleBackColor = true;
+            // 
             // btnManageFair
             // 
-            btnManageFair.Location = new Point(720, 340);
-            btnManageFair.Name = "btnManageFair";
-            btnManageFair.Size = new Size(150, 40);
-            btnManageFair.TabIndex = 2;
-            btnManageFair.Text = "Manage Fair";
-            btnManageFair.UseVisualStyleBackColor = true;
-            btnManageFair.Click += btnManageFair_Click;
-            
+            this.btnManageFair.Location = new System.Drawing.Point(720, 340);
+            this.btnManageFair.Name = "btnManageFair";
+            this.btnManageFair.Size = new System.Drawing.Size(150, 40);
+            this.btnManageFair.TabIndex = 2;
+            this.btnManageFair.Text = "Manage Fair";
+            this.btnManageFair.UseVisualStyleBackColor = true;
+            // 
             // btnCreateFair
             // 
-            btnCreateFair.BackColor = Color.ForestGreen;
-            btnCreateFair.ForeColor = Color.White;
-            btnCreateFair.Location = new Point(560, 340);
-            btnCreateFair.Name = "btnCreateFair";
-            btnCreateFair.Size = new Size(150, 40);
-            btnCreateFair.TabIndex = 1;
-            btnCreateFair.Text = "Create New Fair";
-            btnCreateFair.UseVisualStyleBackColor = false;
-            btnCreateFair.Click += btnCreateFair_Click;
-            
+            this.btnCreateFair.BackColor = System.Drawing.Color.ForestGreen;
+            this.btnCreateFair.ForeColor = System.Drawing.Color.White;
+            this.btnCreateFair.Location = new System.Drawing.Point(560, 340);
+            this.btnCreateFair.Name = "btnCreateFair";
+            this.btnCreateFair.Size = new System.Drawing.Size(150, 40);
+            this.btnCreateFair.TabIndex = 1;
+            this.btnCreateFair.Text = "Create New Fair";
+            this.btnCreateFair.UseVisualStyleBackColor = false;
+            // 
             // dgvJobFairs
             // 
-            dgvJobFairs.AllowUserToAddRows = false;
-            dgvJobFairs.AllowUserToDeleteRows = false;
-            dgvJobFairs.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvJobFairs.Columns.AddRange(new DataGridViewColumn[] { FairId, FairName, FairDate, Venue, Status });
-            dgvJobFairs.Location = new Point(20, 20);
-            dgvJobFairs.MultiSelect = false;
-            dgvJobFairs.Name = "dgvJobFairs";
-            dgvJobFairs.ReadOnly = true;
-            dgvJobFairs.RowHeadersWidth = 51;
-            dgvJobFairs.RowTemplate.Height = 29;
-            dgvJobFairs.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvJobFairs.Size = new Size(850, 300);
-            dgvJobFairs.TabIndex = 0;
-            
+            this.dgvJobFairs.AllowUserToAddRows = false;
+            this.dgvJobFairs.AllowUserToDeleteRows = false;
+            this.dgvJobFairs.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvJobFairs.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.FairId,
+            this.FairName,
+            this.FairDate,
+            this.Venue,
+            this.Status});
+            this.dgvJobFairs.Location = new System.Drawing.Point(20, 20);
+            this.dgvJobFairs.MultiSelect = false;
+            this.dgvJobFairs.Name = "dgvJobFairs";
+            this.dgvJobFairs.ReadOnly = true;
+            this.dgvJobFairs.RowHeadersWidth = 51;
+            this.dgvJobFairs.RowTemplate.Height = 29;
+            this.dgvJobFairs.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.dgvJobFairs.Size = new System.Drawing.Size(850, 300);
+            this.dgvJobFairs.TabIndex = 0;
+            this.dgvJobFairs.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvJobFairs_CellContentClick);
+            // 
             // FairId
             // 
-            FairId.HeaderText = "ID";
-            FairId.MinimumWidth = 6;
-            FairId.Name = "FairId";
-            FairId.ReadOnly = true;
-            FairId.Width = 50;
-            
+            this.FairId.HeaderText = "ID";
+            this.FairId.MinimumWidth = 6;
+            this.FairId.Name = "FairId";
+            this.FairId.ReadOnly = true;
+            this.FairId.Width = 50;
+            // 
             // FairName
             // 
-            FairName.HeaderText = "Fair Name";
-            FairName.MinimumWidth = 6;
-            FairName.Name = "FairName";
-            FairName.ReadOnly = true;
-            FairName.Width = 250;
-            
+            this.FairName.HeaderText = "Fair Name";
+            this.FairName.MinimumWidth = 6;
+            this.FairName.Name = "FairName";
+            this.FairName.ReadOnly = true;
+            this.FairName.Width = 250;
+            // 
             // FairDate
             // 
-            FairDate.HeaderText = "Date";
-            FairDate.MinimumWidth = 6;
-            FairDate.Name = "FairDate";
-            FairDate.ReadOnly = true;
-            FairDate.Width = 125;
-            
+            this.FairDate.HeaderText = "Date";
+            this.FairDate.MinimumWidth = 6;
+            this.FairDate.Name = "FairDate";
+            this.FairDate.ReadOnly = true;
+            this.FairDate.Width = 125;
+            // 
             // Venue
             // 
-            Venue.HeaderText = "Venue";
-            Venue.MinimumWidth = 6;
-            Venue.Name = "Venue";
-            Venue.ReadOnly = true;
-            Venue.Width = 200;
-            
+            this.Venue.HeaderText = "Venue";
+            this.Venue.MinimumWidth = 6;
+            this.Venue.Name = "Venue";
+            this.Venue.ReadOnly = true;
+            this.Venue.Width = 200;
+            // 
             // Status
             // 
-            Status.HeaderText = "Status";
-            Status.MinimumWidth = 6;
-            Status.Name = "Status";
-            Status.ReadOnly = true;
-            Status.Width = 125;
-            
+            this.Status.HeaderText = "Status";
+            this.Status.MinimumWidth = 6;
+            this.Status.Name = "Status";
+            this.Status.ReadOnly = true;
+            this.Status.Width = 125;
+            // 
             // tabCompanies
             // 
-            tabCompanies.Controls.Add(btnApproveCompany);
-            tabCompanies.Controls.Add(dgvCompanies);
-            tabCompanies.Location = new Point(4, 29);
-            tabCompanies.Name = "tabCompanies";
-            tabCompanies.Padding = new Padding(3);
-            tabCompanies.Size = new Size(892, 417);
-            tabCompanies.TabIndex = 1;
-            tabCompanies.Text = "Companies";
-            tabCompanies.UseVisualStyleBackColor = true;
-            
+            this.tabCompanies.Controls.Add(this.btnApproveCompany);
+            this.tabCompanies.Controls.Add(this.dgvCompanies);
+            this.tabCompanies.Location = new System.Drawing.Point(4, 29);
+            this.tabCompanies.Name = "tabCompanies";
+            this.tabCompanies.Padding = new System.Windows.Forms.Padding(3);
+            this.tabCompanies.Size = new System.Drawing.Size(892, 417);
+            this.tabCompanies.TabIndex = 1;
+            this.tabCompanies.Text = "Companies";
+            this.tabCompanies.UseVisualStyleBackColor = true;
+            // 
             // btnApproveCompany
             // 
-            btnApproveCompany.BackColor = Color.RoyalBlue;
-            btnApproveCompany.ForeColor = Color.White;
-            btnApproveCompany.Location = new Point(720, 340);
-            btnApproveCompany.Name = "btnApproveCompany";
-            btnApproveCompany.Size = new Size(150, 40);
-            btnApproveCompany.TabIndex = 1;
-            btnApproveCompany.Text = "Approve Company";
-            btnApproveCompany.UseVisualStyleBackColor = false;
-            btnApproveCompany.Click += btnApproveCompany_Click;
-            
+            this.btnApproveCompany.BackColor = System.Drawing.Color.RoyalBlue;
+            this.btnApproveCompany.ForeColor = System.Drawing.Color.White;
+            this.btnApproveCompany.Location = new System.Drawing.Point(720, 340);
+            this.btnApproveCompany.Name = "btnApproveCompany";
+            this.btnApproveCompany.Size = new System.Drawing.Size(150, 40);
+            this.btnApproveCompany.TabIndex = 1;
+            this.btnApproveCompany.Text = "Approve Company";
+            this.btnApproveCompany.UseVisualStyleBackColor = false;
+            // 
             // dgvCompanies
             // 
-            dgvCompanies.AllowUserToAddRows = false;
-            dgvCompanies.AllowUserToDeleteRows = false;
-            dgvCompanies.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvCompanies.Columns.AddRange(new DataGridViewColumn[] { CompanyId, CompanyName, Industry, JobCount, CompanyStatus });
-            dgvCompanies.Location = new Point(20, 20);
-            dgvCompanies.MultiSelect = false;
-            dgvCompanies.Name = "dgvCompanies";
-            dgvCompanies.ReadOnly = true;
-            dgvCompanies.RowHeadersWidth = 51;
-            dgvCompanies.RowTemplate.Height = 29;
-            dgvCompanies.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvCompanies.Size = new Size(850, 300);
-            dgvCompanies.TabIndex = 0;
-            
+            this.dgvCompanies.AllowUserToAddRows = false;
+            this.dgvCompanies.AllowUserToDeleteRows = false;
+            this.dgvCompanies.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvCompanies.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.CompanyId,
+            this.CompanyName,
+            this.Industry,
+            this.JobCount,
+            this.CompanyStatus});
+            this.dgvCompanies.Location = new System.Drawing.Point(20, 20);
+            this.dgvCompanies.MultiSelect = false;
+            this.dgvCompanies.Name = "dgvCompanies";
+            this.dgvCompanies.ReadOnly = true;
+            this.dgvCompanies.RowHeadersWidth = 51;
+            this.dgvCompanies.RowTemplate.Height = 29;
+            this.dgvCompanies.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.dgvCompanies.Size = new System.Drawing.Size(850, 300);
+            this.dgvCompanies.TabIndex = 0;
+            // 
             // CompanyId
             // 
-            CompanyId.HeaderText = "ID";
-            CompanyId.MinimumWidth = 6;
-            CompanyId.Name = "CompanyId";
-            CompanyId.ReadOnly = true;
-            CompanyId.Width = 50;
-            
+            this.CompanyId.HeaderText = "ID";
+            this.CompanyId.MinimumWidth = 6;
+            this.CompanyId.Name = "CompanyId";
+            this.CompanyId.ReadOnly = true;
+            this.CompanyId.Width = 50;
+            // 
             // CompanyName
             // 
-            CompanyName.HeaderText = "Company Name";
-            CompanyName.MinimumWidth = 6;
-            CompanyName.Name = "CompanyName";
-            CompanyName.ReadOnly = true;
-            CompanyName.Width = 200;
-            
+            this.CompanyName.HeaderText = "Company Name";
+            this.CompanyName.MinimumWidth = 6;
+            this.CompanyName.Name = "CompanyName";
+            this.CompanyName.ReadOnly = true;
+            this.CompanyName.Width = 200;
+            // 
             // Industry
             // 
-            Industry.HeaderText = "Industry";
-            Industry.MinimumWidth = 6;
-            Industry.Name = "Industry";
-            Industry.ReadOnly = true;
-            Industry.Width = 150;
-            
+            this.Industry.HeaderText = "Industry";
+            this.Industry.MinimumWidth = 6;
+            this.Industry.Name = "Industry";
+            this.Industry.ReadOnly = true;
+            this.Industry.Width = 150;
+            // 
             // JobCount
             // 
-            JobCount.HeaderText = "Job Postings";
-            JobCount.MinimumWidth = 6;
-            JobCount.Name = "JobCount";
-            JobCount.ReadOnly = true;
-            JobCount.Width = 125;
-            
+            this.JobCount.HeaderText = "Job Postings";
+            this.JobCount.MinimumWidth = 6;
+            this.JobCount.Name = "JobCount";
+            this.JobCount.ReadOnly = true;
+            this.JobCount.Width = 125;
+            // 
             // CompanyStatus
             // 
-            CompanyStatus.HeaderText = "Status";
-            CompanyStatus.MinimumWidth = 6;
-            CompanyStatus.Name = "CompanyStatus";
-            CompanyStatus.ReadOnly = true;
-            CompanyStatus.Width = 125;
-            
+            this.CompanyStatus.HeaderText = "Status";
+            this.CompanyStatus.MinimumWidth = 6;
+            this.CompanyStatus.Name = "CompanyStatus";
+            this.CompanyStatus.ReadOnly = true;
+            this.CompanyStatus.Width = 125;
+            // 
             // tabStudents
             // 
-            tabStudents.Controls.Add(btnVerifyStudent);
-            tabStudents.Controls.Add(dgvStudents);
-            tabStudents.Location = new Point(4, 29);
-            tabStudents.Name = "tabStudents";
-            tabStudents.Size = new Size(892, 417);
-            tabStudents.TabIndex = 2;
-            tabStudents.Text = "Students";
-            tabStudents.UseVisualStyleBackColor = true;
-            
+            this.tabStudents.Controls.Add(this.btnVerifyStudent);
+            this.tabStudents.Controls.Add(this.dgvStudents);
+            this.tabStudents.Location = new System.Drawing.Point(4, 29);
+            this.tabStudents.Name = "tabStudents";
+            this.tabStudents.Size = new System.Drawing.Size(892, 417);
+            this.tabStudents.TabIndex = 2;
+            this.tabStudents.Text = "Students";
+            this.tabStudents.UseVisualStyleBackColor = true;
+            // 
             // btnVerifyStudent
             // 
-            btnVerifyStudent.BackColor = Color.ForestGreen;
-            btnVerifyStudent.ForeColor = Color.White;
-            btnVerifyStudent.Location = new Point(720, 340);
-            btnVerifyStudent.Name = "btnVerifyStudent";
-            btnVerifyStudent.Size = new Size(150, 40);
-            btnVerifyStudent.TabIndex = 1;
-            btnVerifyStudent.Text = "Verify Student";
-            btnVerifyStudent.UseVisualStyleBackColor = false;
-            btnVerifyStudent.Click += btnVerifyStudent_Click;
-            
+            this.btnVerifyStudent.BackColor = System.Drawing.Color.ForestGreen;
+            this.btnVerifyStudent.ForeColor = System.Drawing.Color.White;
+            this.btnVerifyStudent.Location = new System.Drawing.Point(720, 340);
+            this.btnVerifyStudent.Name = "btnVerifyStudent";
+            this.btnVerifyStudent.Size = new System.Drawing.Size(150, 40);
+            this.btnVerifyStudent.TabIndex = 1;
+            this.btnVerifyStudent.Text = "Verify Student";
+            this.btnVerifyStudent.UseVisualStyleBackColor = false;
+            // 
             // dgvStudents
             // 
-            dgvStudents.AllowUserToAddRows = false;
-            dgvStudents.AllowUserToDeleteRows = false;
-            dgvStudents.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvStudents.Columns.AddRange(new DataGridViewColumn[] { StudentId, StudentName, FastId, Degree, GPA, StudentStatus });
-            dgvStudents.Location = new Point(20, 20);
-            dgvStudents.MultiSelect = false;
-            dgvStudents.Name = "dgvStudents";
-            dgvStudents.ReadOnly = true;
-            dgvStudents.RowHeadersWidth = 51;
-            dgvStudents.RowTemplate.Height = 29;
-            dgvStudents.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvStudents.Size = new Size(850, 300);
-            dgvStudents.TabIndex = 0;
-            
+            this.dgvStudents.AllowUserToAddRows = false;
+            this.dgvStudents.AllowUserToDeleteRows = false;
+            this.dgvStudents.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvStudents.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.StudentId,
+            this.StudentName,
+            this.FastId,
+            this.Degree,
+            this.GPA,
+            this.StudentStatus});
+            this.dgvStudents.Location = new System.Drawing.Point(20, 20);
+            this.dgvStudents.MultiSelect = false;
+            this.dgvStudents.Name = "dgvStudents";
+            this.dgvStudents.ReadOnly = true;
+            this.dgvStudents.RowHeadersWidth = 51;
+            this.dgvStudents.RowTemplate.Height = 29;
+            this.dgvStudents.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.dgvStudents.Size = new System.Drawing.Size(850, 300);
+            this.dgvStudents.TabIndex = 0;
+            // 
             // StudentId
             // 
-            StudentId.HeaderText = "ID";
-            StudentId.MinimumWidth = 6;
-            StudentId.Name = "StudentId";
-            StudentId.ReadOnly = true;
-            StudentId.Width = 50;
-            
+            this.StudentId.HeaderText = "ID";
+            this.StudentId.MinimumWidth = 6;
+            this.StudentId.Name = "StudentId";
+            this.StudentId.ReadOnly = true;
+            this.StudentId.Width = 50;
+            // 
             // StudentName
             // 
-            StudentName.HeaderText = "Name";
-            StudentName.MinimumWidth = 6;
-            StudentName.Name = "StudentName";
-            StudentName.ReadOnly = true;
-            StudentName.Width = 175;
-            
+            this.StudentName.HeaderText = "Name";
+            this.StudentName.MinimumWidth = 6;
+            this.StudentName.Name = "StudentName";
+            this.StudentName.ReadOnly = true;
+            this.StudentName.Width = 175;
+            // 
             // FastId
             // 
-            FastId.HeaderText = "FAST ID";
-            FastId.MinimumWidth = 6;
-            FastId.Name = "FastId";
-            FastId.ReadOnly = true;
-            FastId.Width = 125;
-            
+            this.FastId.HeaderText = "FAST ID";
+            this.FastId.MinimumWidth = 6;
+            this.FastId.Name = "FastId";
+            this.FastId.ReadOnly = true;
+            this.FastId.Width = 125;
+            // 
             // Degree
             // 
-            Degree.HeaderText = "Degree";
-            Degree.MinimumWidth = 6;
-            Degree.Name = "Degree";
-            Degree.ReadOnly = true;
-            Degree.Width = 125;
-            
+            this.Degree.HeaderText = "Degree";
+            this.Degree.MinimumWidth = 6;
+            this.Degree.Name = "Degree";
+            this.Degree.ReadOnly = true;
+            this.Degree.Width = 125;
+            // 
             // GPA
             // 
-            GPA.HeaderText = "GPA";
-            GPA.MinimumWidth = 6;
-            GPA.Name = "GPA";
-            GPA.ReadOnly = true;
-            GPA.Width = 75;
-            
+            this.GPA.HeaderText = "GPA";
+            this.GPA.MinimumWidth = 6;
+            this.GPA.Name = "GPA";
+            this.GPA.ReadOnly = true;
+            this.GPA.Width = 75;
+            // 
             // StudentStatus
             // 
-            StudentStatus.HeaderText = "Status";
-            StudentStatus.MinimumWidth = 6;
-            StudentStatus.Name = "StudentStatus";
-            StudentStatus.ReadOnly = true;
-            StudentStatus.Width = 125;
-            
+            this.StudentStatus.HeaderText = "Status";
+            this.StudentStatus.MinimumWidth = 6;
+            this.StudentStatus.Name = "StudentStatus";
+            this.StudentStatus.ReadOnly = true;
+            this.StudentStatus.Width = 125;
+            // 
             // tabReports
             // 
-            tabReports.Controls.Add(btnGenerateReports);
-            tabReports.Location = new Point(4, 29);
-            tabReports.Name = "tabReports";
-            tabReports.Size = new Size(892, 417);
-            tabReports.TabIndex = 3;
-            tabReports.Text = "Reports";
-            tabReports.UseVisualStyleBackColor = true;
-            
+            this.tabReports.Controls.Add(this.btnGenerateReports);
+            this.tabReports.Location = new System.Drawing.Point(4, 29);
+            this.tabReports.Name = "tabReports";
+            this.tabReports.Size = new System.Drawing.Size(892, 417);
+            this.tabReports.TabIndex = 3;
+            this.tabReports.Text = "Reports";
+            this.tabReports.UseVisualStyleBackColor = true;
+            // 
             // btnGenerateReports
             // 
-            btnGenerateReports.BackColor = Color.RoyalBlue;
-            btnGenerateReports.ForeColor = Color.White;
-            btnGenerateReports.Location = new Point(346, 188);
-            btnGenerateReports.Name = "btnGenerateReports";
-            btnGenerateReports.Size = new Size(200, 50);
-            btnGenerateReports.TabIndex = 0;
-            btnGenerateReports.Text = "Generate Reports";
-            btnGenerateReports.UseVisualStyleBackColor = false;
-            btnGenerateReports.Click += btnGenerateReports_Click;
-            
+            this.btnGenerateReports.BackColor = System.Drawing.Color.RoyalBlue;
+            this.btnGenerateReports.ForeColor = System.Drawing.Color.White;
+            this.btnGenerateReports.Location = new System.Drawing.Point(346, 188);
+            this.btnGenerateReports.Name = "btnGenerateReports";
+            this.btnGenerateReports.Size = new System.Drawing.Size(200, 50);
+            this.btnGenerateReports.TabIndex = 0;
+            this.btnGenerateReports.Text = "Generate Reports";
+            this.btnGenerateReports.UseVisualStyleBackColor = false;
+            // 
             // panel1
             // 
-            panel1.BackColor = SystemColors.Control;
-            panel1.BorderStyle = BorderStyle.FixedSingle;
-            panel1.Controls.Add(btnLogout);
-            panel1.Location = new Point(30, 540);
-            panel1.Name = "panel1";
-            panel1.Size = new Size(900, 80);
-            panel1.TabIndex = 2;
-            
+            this.panel1.BackColor = System.Drawing.SystemColors.Control;
+            this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel1.Controls.Add(this.btnLogout);
+            this.panel1.Location = new System.Drawing.Point(30, 540);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(900, 80);
+            this.panel1.TabIndex = 2;
+            // 
             // btnLogout
             // 
-            btnLogout.BackColor = Color.LightCoral;
-            btnLogout.Location = new Point(700, 20);
-            btnLogout.Name = "btnLogout";
-            btnLogout.Size = new Size(180, 40);
-            btnLogout.TabIndex = 0;
-            btnLogout.Text = "Logout";
-            btnLogout.UseVisualStyleBackColor = false;
-            btnLogout.Click += btnLogout_Click;
-            
+            this.btnLogout.BackColor = System.Drawing.Color.LightCoral;
+            this.btnLogout.Location = new System.Drawing.Point(700, 20);
+            this.btnLogout.Name = "btnLogout";
+            this.btnLogout.Size = new System.Drawing.Size(180, 40);
+            this.btnLogout.TabIndex = 0;
+            this.btnLogout.Text = "Logout";
+            this.btnLogout.UseVisualStyleBackColor = false;
+            // 
             // AdminDashboard
             // 
-            AutoScaleDimensions = new SizeF(8F, 20F);
-            AutoScaleMode = AutoScaleMode.Font;
-            BackColor = SystemColors.GradientInactiveCaption;
-            ClientSize = new Size(962, 653);
-            Controls.Add(panel1);
-            Controls.Add(tabControl1);
-            Controls.Add(lblWelcome);
-            Name = "AdminDashboard";
-            StartPosition = FormStartPosition.CenterScreen;
-            Text = "CareerConnect - Admin Dashboard";
-            tabControl1.ResumeLayout(false);
-            tabJobFairs.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)dgvJobFairs).EndInit();
-            tabCompanies.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)dgvCompanies).EndInit();
-            tabStudents.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)dgvStudents).EndInit();
-            tabReports.ResumeLayout(false);
-            panel1.ResumeLayout(false);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
+            this.ClientSize = new System.Drawing.Size(962, 653);
+            this.Controls.Add(this.panel1);
+            this.Controls.Add(this.tabControl1);
+            this.Controls.Add(this.lblWelcome);
+            this.Name = "AdminDashboard";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.Text = "CareerConnect - Admin Dashboard";
+            this.tabControl1.ResumeLayout(false);
+            this.tabJobFairs.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.dgvJobFairs)).EndInit();
+            this.tabCompanies.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.dgvCompanies)).EndInit();
+            this.tabStudents.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.dgvStudents)).EndInit();
+            this.tabReports.ResumeLayout(false);
+            this.panel1.ResumeLayout(false);
+            
+            // Connect event handlers to buttons
+            this.btnLogout.Click += new System.EventHandler(this.btnLogout_Click);
+            this.btnCreateFair.Click += new System.EventHandler(this.btnCreateFair_Click);
+            this.btnManageFair.Click += new System.EventHandler(this.btnManageFair_Click);
+            this.btnApproveCompany.Click += new System.EventHandler(this.btnApproveCompany_Click);
+            this.btnVerifyStudent.Click += new System.EventHandler(this.btnVerifyStudent_Click);
+            this.btnGenerateReports.Click += new System.EventHandler(this.btnGenerateReports_Click);
+            this.tabControl1.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
+            
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         #endregion

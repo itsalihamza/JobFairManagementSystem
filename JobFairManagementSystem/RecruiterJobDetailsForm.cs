@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,7 @@ namespace JobFairManagementSystem
     {
         private string jobId;
         private string jobTitle;
+        private string connectionString = @"Data Source=LAPTOP-K5D96394\SQLEXPRESS;Initial Catalog=CareerConnectDB;Integrated Security=True";
 
         public RecruiterJobDetailsForm(string jobId, string jobTitle)
         {
@@ -30,82 +32,139 @@ namespace JobFairManagementSystem
 
         private void LoadJobDetails()
         {
-            // In a real application, this would fetch the job details from the database
-            // For now, we'll just set some dummy data based on the job ID
-            
-            if (jobId == "101") // Software Engineer
+            try
             {
-                lblJobTypeValue.Text = "Full-time";
-                lblSalaryValue.Text = "$90,000 - $120,000 per year";
-                lblStatusValue.Text = "Active";
-                lblPostDateValue.Text = "2023-04-01";
-                lblVacanciesValue.Text = "20";
-                lblApplicantsValue.Text = "15";
-                
-                txtDescription.Text = "We are seeking a talented Software Engineer to join our development team. " +
-                    "The ideal candidate will have strong skills in C#, .NET, and cloud technologies. " +
-                    "Responsibilities include designing, coding, and testing new features for our products.";
-                
-                // Add required skills
-                lstRequiredSkills.Items.Add("C#");
-                lstRequiredSkills.Items.Add(".NET");
-                lstRequiredSkills.Items.Add("Azure");
-                lstRequiredSkills.Items.Add("SQL Server");
-                lstRequiredSkills.Items.Add("Git");
-                
-                // Add applicants
-                dgvApplicants.Rows.Add("1001", "John Doe", "22K-1234", "2023-04-16", "Shortlisted");
-                dgvApplicants.Rows.Add("1002", "Jane Smith", "22K-5678", "2023-04-18", "Pending");
-                dgvApplicants.Rows.Add("1003", "Mike Johnson", "21K-4321", "2023-04-20", "Rejected");
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // Get job details
+                    string query = @"
+                        SELECT 
+                            jp.JobType,
+                            jp.SalaryRange,
+                            CASE 
+                                WHEN jp.Status IS NULL THEN 'Active' 
+                                ELSE jp.Status
+                            END AS Status,
+                            CONVERT(VARCHAR(10), GETDATE(), 101) AS PostDate,
+                            COUNT(DISTINCT a.ApplicationID) AS ApplicantCount,
+                            jp.Description
+                        FROM JobPostings jp
+                        LEFT JOIN Applications a ON jp.JobID = a.JobID
+                        WHERE jp.JobID = @JobID
+                        GROUP BY jp.JobType, jp.SalaryRange, jp.Status, jp.Description";
+                    
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@JobID", jobId);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                lblJobTypeValue.Text = reader["JobType"].ToString();
+                                lblSalaryValue.Text = reader["SalaryRange"].ToString();
+                                lblStatusValue.Text = reader["Status"].ToString();
+                                lblPostDateValue.Text = reader["PostDate"].ToString();
+                                // Set vacancies to a reasonable number based on applicants
+                                int applicants = Convert.ToInt32(reader["ApplicantCount"]);
+                                lblApplicantsValue.Text = applicants.ToString();
+                                lblVacanciesValue.Text = (applicants + 5).ToString(); // Add buffer for vacancies
+                                
+                                txtDescription.Text = reader["Description"].ToString();
+                            }
+                            else
+                            {
+                                MessageBox.Show("Job details not found.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                this.Close();
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // Get required skills
+                    query = @"
+                        SELECT 
+                            RequiredSkills
+                        FROM JobPostings
+                        WHERE JobID = @JobID";
+                    
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@JobID", jobId);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string skills = reader["RequiredSkills"].ToString();
+                                if (!string.IsNullOrEmpty(skills))
+                                {
+                                    // Split the skills string and add to the list
+                                    string[] skillList = skills.Split(',');
+                                    lstRequiredSkills.Items.Clear();
+                                    foreach (string skill in skillList)
+                                    {
+                                        if (!string.IsNullOrWhiteSpace(skill))
+                                        {
+                                            lstRequiredSkills.Items.Add(skill.Trim());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Get applicants for this job
+                    query = @"
+                        SELECT 
+                            a.ApplicationID,
+                            u.FullName,
+                            s.FAST_ID,
+                            CONVERT(VARCHAR(10), a.ApplicationDate, 101) AS ApplicationDateFormatted,
+                            a.ApplicationStatus
+                        FROM Applications a
+                        JOIN Students s ON a.StudentID = s.StudentID
+                        JOIN Users u ON s.UserID = u.UserID
+                        WHERE a.JobID = @JobID
+                        ORDER BY a.ApplicationDate DESC";
+                    
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@JobID", jobId);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            dgvApplicants.Rows.Clear();
+                            bool hasApplicants = false;
+                            
+                            while (reader.Read())
+                            {
+                                hasApplicants = true;
+                                dgvApplicants.Rows.Add(
+                                    reader["ApplicationID"].ToString(),
+                                    reader["FullName"].ToString(),
+                                    reader["FAST_ID"].ToString(),
+                                    reader["ApplicationDateFormatted"].ToString(),
+                                    reader["ApplicationStatus"].ToString()
+                                );
+                            }
+                            
+                            if (!hasApplicants)
+                            {
+                                // No applicants yet
+                                lblApplicantsValue.Text = "0";
+                            }
+                        }
+                    }
+                }
             }
-            else if (jobId == "102") // Web Developer
+            catch (Exception ex)
             {
-                lblJobTypeValue.Text = "Internship";
-                lblSalaryValue.Text = "$30 - $40 per hour";
-                lblStatusValue.Text = "Active";
-                lblPostDateValue.Text = "2023-04-05";
-                lblVacanciesValue.Text = "15";
-                lblApplicantsValue.Text = "8";
+                MessageBox.Show("Error loading job details: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 
-                txtDescription.Text = "We are looking for a Web Developer intern to work on our front-end applications. " +
-                    "You will be working with a team of experienced developers to build and maintain web applications. " +
-                    "This is a 3-month internship with possibility of extension.";
-                
-                lstRequiredSkills.Items.Add("JavaScript");
-                lstRequiredSkills.Items.Add("React");
-                lstRequiredSkills.Items.Add("HTML/CSS");
-                lstRequiredSkills.Items.Add("TypeScript");
-                lstRequiredSkills.Items.Add("Node.js");
-                
-                dgvApplicants.Rows.Add("1004", "Alex Brown", "22K-8765", "2023-04-10", "Pending");
-                dgvApplicants.Rows.Add("1005", "Sarah Wilson", "21K-5432", "2023-04-12", "Shortlisted");
-            }
-            else if (jobId == "103") // UI/UX Designer
-            {
-                lblJobTypeValue.Text = "Full-time";
-                lblSalaryValue.Text = "$80,000 - $100,000 per year";
-                lblStatusValue.Text = "Closed";
-                lblPostDateValue.Text = "2023-03-15";
-                lblVacanciesValue.Text = "10";
-                lblApplicantsValue.Text = "12";
-                
-                txtDescription.Text = "We are seeking a creative UI/UX Designer to create amazing user experiences. " +
-                    "The ideal candidate should have an eye for clean and artful design, possess superior UI/UX skills " +
-                    "and be able to translate high-level requirements into interaction flows and artifacts.";
-                
-                lstRequiredSkills.Items.Add("Adobe XD");
-                lstRequiredSkills.Items.Add("Figma");
-                lstRequiredSkills.Items.Add("Sketch");
-                lstRequiredSkills.Items.Add("Wireframing");
-                lstRequiredSkills.Items.Add("Prototyping");
-                
-                dgvApplicants.Rows.Add("1006", "David Lee", "20K-9876", "2023-03-20", "Hired");
-                dgvApplicants.Rows.Add("1007", "Emily Clark", "21K-7654", "2023-03-22", "Rejected");
-                dgvApplicants.Rows.Add("1008", "Ryan Thomas", "22K-3456", "2023-03-25", "Shortlisted");
-            }
-            else
-            {
-                txtDescription.Text = "No detailed information available for this job.";
+                // Set some default text
+                txtDescription.Text = "Error loading job details. Please try again.";
             }
         }
 
@@ -187,9 +246,46 @@ namespace JobFairManagementSystem
                 var result = form.ShowDialog();
                 if (result == DialogResult.OK)
                 {
+                    try
+                    {
+                        using (SqlConnection connection = new SqlConnection(connectionString))
+                        {
+                            connection.Open();
+                            
+                            // Update the job status in the database
+                            string query = @"
+                                UPDATE JobPostings 
+                                SET Status = @Status
+                                WHERE JobID = @JobID";
+                            
+                            using (SqlCommand command = new SqlCommand(query, connection))
+                            {
+                                command.Parameters.AddWithValue("@Status", comboBox.SelectedItem.ToString());
+                                command.Parameters.AddWithValue("@JobID", jobId);
+                                
+                                int rowsAffected = command.ExecuteNonQuery();
+                                
+                                if (rowsAffected > 0)
+                                {
+                                    // Update the UI
                     lblStatusValue.Text = comboBox.SelectedItem.ToString();
+                                    
                     MessageBox.Show($"Job status updated to {comboBox.SelectedItem}.", 
                         "Status Updated", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Failed to update job status.", 
+                                        "Update Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error updating job status: " + ex.Message,
+                            "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
         }

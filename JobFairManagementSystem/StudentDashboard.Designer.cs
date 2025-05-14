@@ -40,6 +40,20 @@ namespace JobFairManagementSystem
             Venue = new DataGridViewTextBoxColumn();
             Time = new DataGridViewTextBoxColumn();
             tabJobs = new TabPage();
+            panelJobFilters = new Panel();
+            lblJobCount = new Label();
+            btnClearFilters = new Button();
+            btnSearch = new Button();
+            checkedListSkills = new CheckedListBox();
+            lblSkills = new Label();
+            cmbLocation = new ComboBox();
+            lblLocation = new Label();
+            cmbSalaryRange = new ComboBox();
+            lblSalary = new Label();
+            cmbJobType = new ComboBox();
+            lblJobType = new Label();
+            txtSearchJobs = new TextBox();
+            lblSearch = new Label();
             btnApplyForJob = new Button();
             btnViewJobDetails = new Button();
             dgvJobs = new DataGridView();
@@ -55,6 +69,8 @@ namespace JobFairManagementSystem
             AppCompany = new DataGridViewTextBoxColumn();
             AppliedDate = new DataGridViewTextBoxColumn();
             AppStatus = new DataGridViewTextBoxColumn();
+            ScheduleInterview = new DataGridViewTextBoxColumn();
+            JobIdHidden = new DataGridViewTextBoxColumn();
             tabInterviews = new TabPage();
             dgvInterviews = new DataGridView();
             InterviewId = new DataGridViewTextBoxColumn();
@@ -63,6 +79,16 @@ namespace JobFairManagementSystem
             IntDate = new DataGridViewTextBoxColumn();
             IntTime = new DataGridViewTextBoxColumn();
             Location = new DataGridViewTextBoxColumn();
+            tabPastInterviews = new TabPage();
+            btnSubmitReview = new Button();
+            dgvPastInterviews = new DataGridView();
+            PastInterviewId = new DataGridViewTextBoxColumn();
+            PastCompany = new DataGridViewTextBoxColumn();
+            PastJobTitle = new DataGridViewTextBoxColumn();
+            PastDate = new DataGridViewTextBoxColumn();
+            PastTime = new DataGridViewTextBoxColumn();
+            RecruiterId = new DataGridViewTextBoxColumn();
+            ReviewStatus = new DataGridViewTextBoxColumn();
             panel1 = new Panel();
             btnLogout = new Button();
             btnRefresh = new Button();
@@ -72,11 +98,14 @@ namespace JobFairManagementSystem
             tabJobFairs.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvJobFairs).BeginInit();
             tabJobs.SuspendLayout();
+            panelJobFilters.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvJobs).BeginInit();
             tabApplications.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvApplications).BeginInit();
             tabInterviews.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvInterviews).BeginInit();
+            tabPastInterviews.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvPastInterviews).BeginInit();
             panel1.SuspendLayout();
             SuspendLayout();
             
@@ -96,10 +125,11 @@ namespace JobFairManagementSystem
             tabControl1.Controls.Add(tabJobs);
             tabControl1.Controls.Add(tabApplications);
             tabControl1.Controls.Add(tabInterviews);
+            tabControl1.Controls.Add(tabPastInterviews);
             tabControl1.Location = new Point(30, 70);
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
-            tabControl1.Size = new Size(900, 450);
+            tabControl1.Size = new Size(900, 550);
             tabControl1.TabIndex = 1;
             tabControl1.SelectedIndexChanged += tabControl1_SelectedIndexChanged;
             
@@ -196,16 +226,156 @@ namespace JobFairManagementSystem
             
             // tabJobs
             // 
+            tabJobs.Controls.Add(panelJobFilters);
             tabJobs.Controls.Add(btnApplyForJob);
             tabJobs.Controls.Add(btnViewJobDetails);
             tabJobs.Controls.Add(dgvJobs);
             tabJobs.Location = new Point(4, 29);
             tabJobs.Name = "tabJobs";
             tabJobs.Padding = new Padding(3);
-            tabJobs.Size = new Size(892, 417);
+            tabJobs.Size = new Size(892, 517);
             tabJobs.TabIndex = 1;
             tabJobs.Text = "Available Jobs";
             tabJobs.UseVisualStyleBackColor = true;
+            
+            // panelJobFilters
+            // 
+            panelJobFilters.BorderStyle = BorderStyle.FixedSingle;
+            panelJobFilters.Controls.Add(lblJobCount);
+            panelJobFilters.Controls.Add(btnClearFilters);
+            panelJobFilters.Controls.Add(btnSearch);
+            panelJobFilters.Controls.Add(checkedListSkills);
+            panelJobFilters.Controls.Add(lblSkills);
+            panelJobFilters.Controls.Add(cmbLocation);
+            panelJobFilters.Controls.Add(lblLocation);
+            panelJobFilters.Controls.Add(cmbSalaryRange);
+            panelJobFilters.Controls.Add(lblSalary);
+            panelJobFilters.Controls.Add(cmbJobType);
+            panelJobFilters.Controls.Add(lblJobType);
+            panelJobFilters.Controls.Add(txtSearchJobs);
+            panelJobFilters.Controls.Add(lblSearch);
+            panelJobFilters.Location = new Point(20, 20);
+            panelJobFilters.Name = "panelJobFilters";
+            panelJobFilters.Size = new Size(850, 170);
+            panelJobFilters.TabIndex = 3;
+            
+            // lblJobCount
+            // 
+            lblJobCount.AutoSize = true;
+            lblJobCount.Location = new Point(10, 137);
+            lblJobCount.Name = "lblJobCount";
+            lblJobCount.Size = new Size(59, 20);
+            lblJobCount.TabIndex = 12;
+            lblJobCount.Text = "Found 0 job(s)";
+            
+            // btnClearFilters
+            // 
+            btnClearFilters.Location = new Point(715, 71);
+            btnClearFilters.Name = "btnClearFilters";
+            btnClearFilters.Size = new Size(120, 30);
+            btnClearFilters.TabIndex = 11;
+            btnClearFilters.Text = "Clear Filters";
+            btnClearFilters.UseVisualStyleBackColor = true;
+            btnClearFilters.Click += btnClearFilters_Click;
+            
+            // btnSearch
+            // 
+            btnSearch.BackColor = Color.ForestGreen;
+            btnSearch.ForeColor = Color.White;
+            btnSearch.Location = new Point(715, 31);
+            btnSearch.Name = "btnSearch";
+            btnSearch.Size = new Size(120, 30);
+            btnSearch.TabIndex = 10;
+            btnSearch.Text = "Search";
+            btnSearch.UseVisualStyleBackColor = false;
+            btnSearch.Click += btnSearch_Click;
+            
+            // checkedListSkills
+            // 
+            checkedListSkills.FormattingEnabled = true;
+            checkedListSkills.Location = new Point(510, 30);
+            checkedListSkills.Name = "checkedListSkills";
+            checkedListSkills.Size = new Size(180, 114);
+            checkedListSkills.TabIndex = 9;
+            
+            // lblSkills
+            // 
+            lblSkills.AutoSize = true;
+            lblSkills.Location = new Point(510, 10);
+            lblSkills.Name = "lblSkills";
+            lblSkills.Size = new Size(111, 20);
+            lblSkills.TabIndex = 8;
+            lblSkills.Text = "Required Skills:";
+            
+            // cmbLocation
+            // 
+            cmbLocation.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLocation.FormattingEnabled = true;
+            cmbLocation.Location = new Point(320, 120);
+            cmbLocation.Name = "cmbLocation";
+            cmbLocation.Size = new Size(165, 28);
+            cmbLocation.TabIndex = 7;
+            
+            // lblLocation
+            // 
+            lblLocation.AutoSize = true;
+            lblLocation.Location = new Point(320, 100);
+            lblLocation.Name = "lblLocation";
+            lblLocation.Size = new Size(69, 20);
+            lblLocation.TabIndex = 6;
+            lblLocation.Text = "Location:";
+            
+            // cmbSalaryRange
+            // 
+            cmbSalaryRange.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbSalaryRange.FormattingEnabled = true;
+            cmbSalaryRange.Location = new Point(320, 60);
+            cmbSalaryRange.Name = "cmbSalaryRange";
+            cmbSalaryRange.Size = new Size(165, 28);
+            cmbSalaryRange.TabIndex = 5;
+            
+            // lblSalary
+            // 
+            lblSalary.AutoSize = true;
+            lblSalary.Location = new Point(320, 40);
+            lblSalary.Name = "lblSalary";
+            lblSalary.Size = new Size(101, 20);
+            lblSalary.TabIndex = 4;
+            lblSalary.Text = "Salary Range:";
+            
+            // cmbJobType
+            // 
+            cmbJobType.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbJobType.FormattingEnabled = true;
+            cmbJobType.Location = new Point(130, 60);
+            cmbJobType.Name = "cmbJobType";
+            cmbJobType.Size = new Size(165, 28);
+            cmbJobType.TabIndex = 3;
+            
+            // lblJobType
+            // 
+            lblJobType.AutoSize = true;
+            lblJobType.Location = new Point(130, 40);
+            lblJobType.Name = "lblJobType";
+            lblJobType.Size = new Size(73, 20);
+            lblJobType.TabIndex = 2;
+            lblJobType.Text = "Job Type:";
+            
+            // txtSearchJobs
+            // 
+            txtSearchJobs.Location = new Point(10, 60);
+            txtSearchJobs.Name = "txtSearchJobs";
+            txtSearchJobs.Size = new Size(100, 27);
+            txtSearchJobs.TabIndex = 1;
+            
+            // lblSearch
+            // 
+            lblSearch.AutoSize = true;
+            lblSearch.Location = new Point(10, 40);
+            lblSearch.Name = "lblSearch";
+            lblSearch.Size = new Size(56, 20);
+            lblSearch.TabIndex = 0;
+            lblSearch.Text = "Search:";
             
             // dgvJobs
             // 
@@ -290,7 +460,8 @@ namespace JobFairManagementSystem
             tabApplications.Controls.Add(dgvApplications);
             tabApplications.Location = new Point(4, 29);
             tabApplications.Name = "tabApplications";
-            tabApplications.Size = new Size(892, 417);
+            tabApplications.Padding = new Padding(3);
+            tabApplications.Size = new Size(892, 517);
             tabApplications.TabIndex = 2;
             tabApplications.Text = "My Applications";
             tabApplications.UseVisualStyleBackColor = true;
@@ -300,7 +471,8 @@ namespace JobFairManagementSystem
             dgvApplications.AllowUserToAddRows = false;
             dgvApplications.AllowUserToDeleteRows = false;
             dgvApplications.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvApplications.Columns.AddRange(new DataGridViewColumn[] { ApplicationId, AppJobTitle, AppCompany, AppliedDate, AppStatus });
+            dgvApplications.Columns.AddRange(new DataGridViewColumn[] { 
+                ApplicationId, AppJobTitle, AppCompany, AppliedDate, AppStatus, ScheduleInterview, JobIdHidden });
             dgvApplications.Location = new Point(20, 20);
             dgvApplications.MultiSelect = false;
             dgvApplications.Name = "dgvApplications";
@@ -310,6 +482,7 @@ namespace JobFairManagementSystem
             dgvApplications.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvApplications.Size = new Size(850, 370);
             dgvApplications.TabIndex = 0;
+            dgvApplications.CellContentClick += dgvApplications_CellContentClick;
             
             // ApplicationId
             // 
@@ -325,7 +498,7 @@ namespace JobFairManagementSystem
             AppJobTitle.MinimumWidth = 6;
             AppJobTitle.Name = "AppJobTitle";
             AppJobTitle.ReadOnly = true;
-            AppJobTitle.Width = 220;
+            AppJobTitle.Width = 200;
             
             // AppCompany
             // 
@@ -333,7 +506,7 @@ namespace JobFairManagementSystem
             AppCompany.MinimumWidth = 6;
             AppCompany.Name = "AppCompany";
             AppCompany.ReadOnly = true;
-            AppCompany.Width = 200;
+            AppCompany.Width = 180;
             
             // AppliedDate
             // 
@@ -349,10 +522,23 @@ namespace JobFairManagementSystem
             AppStatus.MinimumWidth = 6;
             AppStatus.Name = "AppStatus";
             AppStatus.ReadOnly = true;
-            AppStatus.Width = 150;
+            AppStatus.Width = 125;
             
-            // tabInterviews
+            // ScheduleInterview
             // 
+            ScheduleInterview.HeaderText = "Action";
+            ScheduleInterview.MinimumWidth = 6;
+            ScheduleInterview.Name = "ScheduleInterview";
+            ScheduleInterview.ReadOnly = true;
+            ScheduleInterview.Width = 125;
+            
+            // JobIdHidden
+            // 
+            JobIdHidden.HeaderText = "JobID";
+            JobIdHidden.MinimumWidth = 6;
+            JobIdHidden.Name = "JobIdHidden";
+            JobIdHidden.ReadOnly = true;
+            JobIdHidden.Visible = false;
             tabInterviews.Controls.Add(dgvInterviews);
             tabInterviews.Location = new Point(4, 29);
             tabInterviews.Name = "tabInterviews";
@@ -425,6 +611,104 @@ namespace JobFairManagementSystem
             Location.ReadOnly = true;
             Location.Width = 125;
             
+            // tabPastInterviews
+            // 
+            tabPastInterviews.Controls.Add(btnSubmitReview);
+            tabPastInterviews.Controls.Add(dgvPastInterviews);
+            tabPastInterviews.Location = new Point(4, 29);
+            tabPastInterviews.Name = "tabPastInterviews";
+            tabPastInterviews.Padding = new Padding(3);
+            tabPastInterviews.Size = new Size(892, 517);
+            tabPastInterviews.TabIndex = 4;
+            tabPastInterviews.Text = "Past Interviews";
+            tabPastInterviews.UseVisualStyleBackColor = true;
+            
+            // btnSubmitReview
+            // 
+            btnSubmitReview.BackColor = Color.RoyalBlue;
+            btnSubmitReview.ForeColor = Color.White;
+            btnSubmitReview.Location = new Point(720, 440);
+            btnSubmitReview.Name = "btnSubmitReview";
+            btnSubmitReview.Size = new Size(150, 40);
+            btnSubmitReview.TabIndex = 1;
+            btnSubmitReview.Text = "Submit Review";
+            btnSubmitReview.UseVisualStyleBackColor = false;
+            btnSubmitReview.Click += btnSubmitReview_Click;
+            
+            // dgvPastInterviews
+            // 
+            dgvPastInterviews.AllowUserToAddRows = false;
+            dgvPastInterviews.AllowUserToDeleteRows = false;
+            dgvPastInterviews.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvPastInterviews.Columns.AddRange(new DataGridViewColumn[] { 
+                PastInterviewId, PastCompany, PastJobTitle, PastDate, PastTime, RecruiterId, ReviewStatus });
+            dgvPastInterviews.Location = new Point(20, 20);
+            dgvPastInterviews.MultiSelect = false;
+            dgvPastInterviews.Name = "dgvPastInterviews";
+            dgvPastInterviews.ReadOnly = true;
+            dgvPastInterviews.RowHeadersWidth = 51;
+            dgvPastInterviews.RowTemplate.Height = 29;
+            dgvPastInterviews.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvPastInterviews.Size = new Size(850, 400);
+            dgvPastInterviews.TabIndex = 0;
+            
+            // PastInterviewId
+            // 
+            PastInterviewId.HeaderText = "ID";
+            PastInterviewId.MinimumWidth = 6;
+            PastInterviewId.Name = "PastInterviewId";
+            PastInterviewId.ReadOnly = true;
+            PastInterviewId.Width = 50;
+            
+            // PastCompany
+            // 
+            PastCompany.HeaderText = "Company";
+            PastCompany.MinimumWidth = 6;
+            PastCompany.Name = "PastCompany";
+            PastCompany.ReadOnly = true;
+            PastCompany.Width = 180;
+            
+            // PastJobTitle
+            // 
+            PastJobTitle.HeaderText = "Job Title";
+            PastJobTitle.MinimumWidth = 6;
+            PastJobTitle.Name = "PastJobTitle";
+            PastJobTitle.ReadOnly = true;
+            PastJobTitle.Width = 180;
+            
+            // PastDate
+            // 
+            PastDate.HeaderText = "Date";
+            PastDate.MinimumWidth = 6;
+            PastDate.Name = "PastDate";
+            PastDate.ReadOnly = true;
+            PastDate.Width = 125;
+            
+            // PastTime
+            // 
+            PastTime.HeaderText = "Time";
+            PastTime.MinimumWidth = 6;
+            PastTime.Name = "PastTime";
+            PastTime.ReadOnly = true;
+            PastTime.Width = 125;
+            
+            // RecruiterId
+            // 
+            RecruiterId.HeaderText = "RecruiterID";
+            RecruiterId.MinimumWidth = 6;
+            RecruiterId.Name = "RecruiterId";
+            RecruiterId.ReadOnly = true;
+            RecruiterId.Visible = false;
+            RecruiterId.Width = 125;
+            
+            // ReviewStatus
+            // 
+            ReviewStatus.HeaderText = "Review Status";
+            ReviewStatus.MinimumWidth = 6;
+            ReviewStatus.Name = "ReviewStatus";
+            ReviewStatus.ReadOnly = true;
+            ReviewStatus.Width = 140;
+            
             // panel1
             // 
             panel1.BackColor = SystemColors.Control;
@@ -487,7 +771,7 @@ namespace JobFairManagementSystem
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.GradientInactiveCaption;
-            ClientSize = new Size(962, 653);
+            ClientSize = new Size(950, 700);  // Adjusted size for new content
             Controls.Add(panel1);
             Controls.Add(tabControl1);
             Controls.Add(lblWelcome);
@@ -498,11 +782,15 @@ namespace JobFairManagementSystem
             tabJobFairs.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvJobFairs).EndInit();
             tabJobs.ResumeLayout(false);
+            panelJobFilters.ResumeLayout(false);
+            panelJobFilters.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)dgvJobs).EndInit();
             tabApplications.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvApplications).EndInit();
             tabInterviews.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvInterviews).EndInit();
+            tabPastInterviews.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dgvPastInterviews).EndInit();
             panel1.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
@@ -516,6 +804,7 @@ namespace JobFairManagementSystem
         private TabPage tabJobs;
         private TabPage tabApplications;
         private TabPage tabInterviews;
+        private TabPage tabPastInterviews;
         private DataGridView dgvJobFairs;
         private Button btnViewFairDetails;
         private Button btnRegisterForFair;
@@ -550,5 +839,34 @@ namespace JobFairManagementSystem
         private Button btnRefresh;
         private Button btnManageSkills;
         private Button btnUpdateProfile;
+        
+        // New controls for job search and filtering
+        private Panel panelJobFilters;
+        private Label lblSearch;
+        private TextBox txtSearchJobs;
+        private Label lblJobType;
+        private ComboBox cmbJobType;
+        private Label lblSalary;
+        private ComboBox cmbSalaryRange;
+        private Label lblLocation;
+        private ComboBox cmbLocation;
+        private Label lblSkills;
+        private CheckedListBox checkedListSkills;
+        private Button btnSearch;
+        private Button btnClearFilters;
+        private Label lblJobCount;
+        
+        // New controls for interview reviews
+        private DataGridView dgvPastInterviews;
+        private Button btnSubmitReview;
+        private DataGridViewTextBoxColumn PastInterviewId;
+        private DataGridViewTextBoxColumn PastCompany;
+        private DataGridViewTextBoxColumn PastJobTitle;
+        private DataGridViewTextBoxColumn PastDate;
+        private DataGridViewTextBoxColumn PastTime;
+        private DataGridViewTextBoxColumn RecruiterId;
+        private DataGridViewTextBoxColumn ReviewStatus;
+        private DataGridViewTextBoxColumn ScheduleInterview;
+        private DataGridViewTextBoxColumn JobIdHidden;
     }
 } 

@@ -97,7 +97,9 @@ CREATE TABLE BoothVisits (
     StudentID INT FOREIGN KEY REFERENCES Students(StudentID),
     CompanyID INT FOREIGN KEY REFERENCES Companies(CompanyID),
     JobFairID INT FOREIGN KEY REFERENCES JobFairEvents(JobFairID),
-    CheckInTime DATETIME
+    CheckInTime DATETIME,
+    BoothNumber VARCHAR(50),
+    LastReminderDate DATETIME
 );
 
 CREATE TABLE Skills (
